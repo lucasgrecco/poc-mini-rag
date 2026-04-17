@@ -1,20 +1,30 @@
 import os
+
+from langsmith import traceable
 from sqlalchemy import create_engine, text
 from openai import OpenAI
+from langsmith.wrappers import wrap_openai
+from langsmith import traceable
+import langsmith
 
 # 1. Configurações
 DATABASE_URL = "postgresql+psycopg2://admin:admin@db/rag_db"
 engine = create_engine(DATABASE_URL)
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = wrap_openai(OpenAI(api_key=os.environ.get("OPENAI_API_KEY")))
 
+
+@traceable(run_type="tool", name="Retrieve embedding")
 def get_embedding(query_text):
+    client_ls = langsmith.Client()
+    print("LangSmith conectado:", client_ls.api_url)
+    print("Tracing ativo:", langsmith.utils.tracing_is_enabled())
     response = client.embeddings.create(
         input=query_text,
         model="text-embedding-3-small"
     )
     return response.data[0].embedding
 
-# 2. Lógica principal
+@traceable(name="Chat Pipeline")
 def realizar_busca():
     print("\n--- 🔍 Yu-Gi-Oh! Semantic Search ---\n")
     pergunta = input("O que você procura? ")

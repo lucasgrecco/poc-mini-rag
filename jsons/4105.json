@@ -1,0 +1,15 @@
+{
+  "id": 4105,
+  "type": "monster",
+  "name": "Pumpking the King of Ghosts",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Gains 100 ATK/DEF while \"Castle of Dark Illusions\" is on the field. Also, during your Standby Phase, if \"Castle of Dark Illusions\" is on the field: This card gains 100 ATK/DEF. This effect activates once per turn, for four of your Standby Phases (counting this as the first). \"Castle of Dark Illusions\" must be on the field to activate and to resolve this effect. If \"Castle of Dark Illusions\" is not on the field, this ATK/DEF gain disappears and this effect resets.",
+  "level": 6,
+  "atk": 1800,
+  "def": 2000,
+  "properties": [
+    "Zombie",
+    "Effect"
+  ]
+}
