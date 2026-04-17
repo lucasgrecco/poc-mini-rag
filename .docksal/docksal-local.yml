@@ -1,0 +1,9 @@
+services:
+  cli:
+    env_file:
+      # Pass local environment variable overrides into cli container.
+      - docksal-local.env
+  db:
+    env_file:
+      # Pass local environment variable overrides into web container.
+      - docksal-local.env
