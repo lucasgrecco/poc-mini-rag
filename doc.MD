@@ -1,59 +1,84 @@
-# Yu-Gi-Oh! Micro RAG - Documentação da Fundação ⚙️
+# Yu-Gi-Oh! Micro RAG - Documentação da Fundação
 
 Este documento registra a configuração da infraestrutura e do banco de dados vetorial.
 
-## 🏗️ Infraestrutura (Docksal)
-O ambiente roda em containers Docker gerenciados pelo Docksal:
-- **db**: PostgreSQL com a extensão `pgvector` para busca semântica.
-- **cli**: Ambiente Python 3.12-slim isolado.
+## Infraestrutura (Docker Compose)
 
-## 🐍 Ambiente Python (UV)
+O ambiente roda em containers Docker gerenciados diretamente pelo Docker Compose (migrado do Docksal):
+
+- **db**: PostgreSQL com a extensão `pgvector` para busca semântica.
+- **cli**: Ambiente Python 3.13-slim com `uv` pré-instalado.
+
+### Arquivos de configuração
+
+| Arquivo | Propósito |
+|---|---|
+| `docker-compose.yml` | Define os serviços `db` e `cli` |
+| `Dockerfile` | Imagem do `cli` com Python 3.13 e `uv` |
+| `.env` | Variáveis de ambiente locais (não versionado) |
+| `Makefile` | Atalhos para os comandos mais comuns |
+
+### Variáveis de ambiente (`.env`)
+
+```
+OPENAI_API_KEY=sk-...
+```
+
+## Ambiente Python (uv)
+
 Utilizamos o `uv` para gerenciamento de pacotes e ambientes virtuais:
+
 - `sqlalchemy`: ORM para mapeamento de dados.
 - `alembic`: Controle de versões (migrações) do banco de dados.
 - `psycopg2-binary`: Driver de conexão com PostgreSQL.
 - `pgvector`: Suporte a vetores no SQLAlchemy.
+- `openai`: Cliente da API OpenAI para geração de embeddings.
 
-## 🗄️ Modelo de Dados (SQLAlchemy)
+## Modelo de Dados (SQLAlchemy)
+
 A tabela principal chama-se `cards` e possui a seguinte estrutura:
-- `id`: Integer (Primary Key)
-- `name`: String
-- `level`: Integer
-- `atk`: Integer
-- `def_`: Integer
-- `english_attribute`: String
-- `content`: Text (Texto concatenado para a IA ler)
-- `embedding`: Vector(1536) (Vetor gerado pela OpenAI)
 
-## 📜 Comandos Principais
-1. **Inicializar banco**: `uv run alembic init alembic`
-2. **Gerar migração**: `uv run alembic revision --autogenerate -m "create_cards_table"`
-3. **Aplicar tabelas**: `uv run alembic upgrade head`
+| Coluna | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer (PK) | Identificador único |
+| `name` | String | Nome da carta |
+| `level` | Integer | Nível/Rank |
+| `atk` | Integer | Pontos de ataque |
+| `def_` | Integer | Pontos de defesa |
+| `english_attribute` | String | Atributo em inglês |
+| `content` | Text | Texto concatenado para a IA ler |
+| `embedding` | Vector(1536) | Vetor gerado pela OpenAI |
+
+## Comandos principais
+
+### Containers
+
+| Ação | Docker Compose (atual) | Docksal (antigo) |
+|---|---|---|
+| Inicializar projeto | `make init` | `fin project start` |
+| Reiniciar do zero | `make reset` | `fin project remove && fin project start` |
+| Parar containers | `docker compose stop` | `fin stop` |
+| Remover containers | `docker compose down` | `fin rm` |
+| Abrir terminal no cli | `docker compose exec cli bash` | `fin bash cli` |
+| Executar comando no cli | `make exec CMD="<comando>"` | `fin exec <comando>` |
+
+### Dependências Python
+
+| Ação | Comando |
+|---|---|
+| Instalar dependências | `docker compose exec cli uv sync` |
+| Adicionar pacote | `docker compose exec cli uv add <pacote>` |
+
+### Banco de dados e migrações
+
+| Ação | Comando |
+|---|---|
+| Inicializar alembic | `docker compose exec cli uv run alembic init alembic` |
+| Gerar migração | `docker compose exec cli uv run alembic revision --autogenerate -m "<mensagem>"` |
+| Aplicar migrações | `docker compose exec cli uv run alembic upgrade head` |
+| Executar ingest | `docker compose exec cli uv run app/ingest.py` |
 
 
-Com certeza! Vamos organizar tudo o que fizemos na nossa ⚙️ Fundação para que você tenha esse histórico à mão.
-
-Aqui estão os comandos, divididos por objetivo:
-🚢 Infraestrutura e Containers
-
-    fin project start: Inicia os serviços (PostgreSQL e Python) definidos no docksal.yml.
-
-    fin bash cli: Abre o terminal dentro do container de aplicação onde rodamos o Python.
-
-    fin project remove: Para e remove os containers do projeto.
-
-📦 Gerenciamento de Pacotes (dentro do container)
-
-    pip install uv: Instala o gerenciador de pacotes ultra rápido.
-
-    uv init: Inicializa a estrutura básica do projeto Python.
-
-    uv add sqlalchemy alembic psycopg2-binary pgvector: Adiciona as bibliotecas de banco de dados, migrações e vetores ao projeto.
-
-🗄️ Banco de Dados e Migrações
-
-    uv run alembic init alembic: Cria a pasta de configuração das migrações.
-
-    uv run alembic revision --autogenerate -m "create_cards_table": Gera o script Python que descreve a criação da tabela no banco.
-
-    uv run alembic upgrade head: Executa o script no PostgreSQL, criando as tabelas de fato.
+### Iniciar DB + migração
+- docker compose exec cli uv run alembic upgrade head                                                                         
+- docker compose exec cli uv run alembic revision --autogenerate -m "card_migration"

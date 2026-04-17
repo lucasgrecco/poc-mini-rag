@@ -20,6 +20,8 @@ services:
     volumes:
       - ../:/app
     working_dir: /app
+    environment:
+      - OPENAI_API_KEY
 
 volumes:
   db_data: # Salva os dados do banco para não perdermos ao reiniciar

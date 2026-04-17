@@ -1,0 +1,24 @@
+services:
+  db:
+    image: ankane/pgvector:latest
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=rag_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  cli:
+    build: .
+    command: sleep infinity
+    volumes:
+      - .:/app
+    working_dir: /app
+    env_file: .env
+    depends_on:
+      - db
+
+volumes:
+  db_data:
