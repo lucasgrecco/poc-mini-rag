@@ -50,6 +50,8 @@ def process_jsons():
             if level: parts.append(f"Level: {level}")
             if atk is not None: parts.append(f"ATK: {atk}")
             if defense is not None: parts.append(f"DEF: {defense}")
+            properties = card_json.get('properties')
+            if properties is not None: parts.append(f"PROPERTIES: {properties}")
 
             full_content = " | ".join(parts)
             effect = card_json.get('effectText', '')
@@ -65,6 +67,7 @@ def process_jsons():
                 atk=atk,
                 def_=defense,
                 english_attribute=attribute,
+                properties=properties,
                 content=full_content,
                 embedding=vector
             )
