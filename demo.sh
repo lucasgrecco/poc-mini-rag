@@ -101,26 +101,41 @@ setup_env() {
 start_services() {
   divider "Starting services"
 
-  docker compose up -d --wait db 2>/dev/null || {
-    # Fallback: manual poll if --wait is not supported
-    docker compose up -d
-    echo -n "  Waiting for database..."
-    for i in $(seq 1 30); do
-      if docker compose exec -T db pg_isready -U admin -d rag_db &>/dev/null; then
-        echo ""
-        break
-      fi
-      sleep 2
-      echo -n "."
-    done
-    if ! docker compose exec -T db pg_isready -U admin -d rag_db &>/dev/null; then
-      echo ""
-      fail "Database did not become ready within 60 seconds."
-      exit 1
-    fi
-  }
+  docker compose up -d
 
+  # Wait for database to accept connections
+  echo -n "  Waiting for database..."
+  for i in $(seq 1 30); do
+    if docker compose exec -T db pg_isready -U admin -d rag_db &>/dev/null; then
+      echo ""
+      break
+    fi
+    sleep 2
+    echo -n "."
+  done
+  if ! docker compose exec -T db pg_isready -U admin -d rag_db &>/dev/null; then
+    echo ""
+    fail "Database did not become ready within 60 seconds."
+    exit 1
+  fi
   success "Database ready"
+
+  # Wait for CLI container to be running
+  echo -n "  Waiting for CLI container..."
+  for i in $(seq 1 15); do
+    if docker compose exec -T cli true &>/dev/null; then
+      echo ""
+      break
+    fi
+    sleep 2
+    echo -n "."
+  done
+  if ! docker compose exec -T cli true &>/dev/null; then
+    echo ""
+    fail "CLI container is not running. Check: docker compose logs cli"
+    exit 1
+  fi
+  success "CLI ready"
 }
 
 # ── 3. Install dependencies ──────────────
