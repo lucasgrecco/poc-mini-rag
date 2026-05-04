@@ -1,90 +1,153 @@
-import os
+"""Interactive semantic search over Yu-Gi-Oh! cards using RAG.
+
+Accepts natural language queries, retrieves the most semantically similar
+cards via pgvector cosine distance, and generates a natural language answer
+using an LLM.
+"""
+
+import argparse
+import logging
 
 from langsmith import traceable
 from sqlalchemy import create_engine, text
 from openai import OpenAI
 from langsmith.wrappers import wrap_openai
-from langsmith import traceable
-import langsmith
 
-# 1. Configurações
-DATABASE_URL = "postgresql+psycopg2://admin:admin@db/rag_db"
+from app.config import DATABASE_URL, CHAT_MODEL, SEARCH_LIMIT
+from app.embeddings import get_embedding
+
+logger = logging.getLogger(__name__)
+
 engine = create_engine(DATABASE_URL)
-client = wrap_openai(OpenAI(api_key=os.environ.get("OPENAI_API_KEY")))
-
-
-@traceable(run_type="tool", name="Retrieve embedding")
-def get_embedding(query_text):
-    client_ls = langsmith.Client()
-    print("LangSmith conectado:", client_ls.api_url)
-    print("Tracing ativo:", langsmith.utils.tracing_is_enabled())
-    response = client.embeddings.create(
-        input=query_text,
-        model="text-embedding-3-small"
-    )
-    return response.data[0].embedding
+_client = wrap_openai(OpenAI())
 
 
 @traceable(run_type="tool", name="Chat with model")
-def get_model_answer(question, results_db):
+def get_model_answer(question: str, results_db: list) -> str:
+    """Generate a natural language answer from retrieved card results.
+
+    Args:
+        question: The user's original query.
+        results_db: List of rows from the pgvector similarity query.
+
+    Returns:
+        A natural language answer grounded in the retrieved cards.
+    """
     card_text = []
     for row in results_db:
         card_text.append(f"- {row.name}: {row.content}")
 
     context = "\n".join(card_text)
 
-    prompt = f"""Você é um especialista em cartas de Yu-Gi-Oh!.
-Sua missão é responder à pergunta do usuário utilizando APENAS as cartas fornecidas no contexto abaixo.
-Se a resposta não puder ser encontrada nas cartas abaixo, diga simplesmente: "Não encontrei cartas que correspondam a isso na minha base."
-Não invente informações ou efeitos que não estejam no contexto.
+    prompt = f"""You are a Yu-Gi-Oh! card expert.
+Your mission is to answer the user's question using ONLY the cards provided in the context below.
+If the answer cannot be found in the cards below, simply say: "I couldn't find any matching cards in my database."
+Do not make up information or effects that are not in the context.
 
-CONTEXTO DE CARTAS ENCONTRADAS:
+CARDS FOUND:
 {context}
 """
-    print("Gerando resposta com a IA... 💬\n")
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",  # Rápido, barato e muito inteligente
+
+    response = _client.chat.completions.create(
+        model=CHAT_MODEL,
         messages=[
             {"role": "system", "content": prompt},
-            {"role": "user", "content": question}
+            {"role": "user", "content": question},
         ],
-        temperature=0.2  # Temperatura baixa para ele ser mais factual e menos "criativo"
+        temperature=0.2,  # Low temperature keeps responses factual
     )
 
     return response.choices[0].message.content
 
 
 @traceable(name="Chat Pipeline")
-def search_card():
-    print("\n--- 🔍 Yu-Gi-Oh! Semantic Search ---\n")
-    question = input("O que você procura? ")
+def search_card(query: str) -> None:
+    """Execute a single semantic search query.
 
-    print("\nGerando vetor da pergunta... 🧠")
-    vetor_pergunta = get_embedding(question)
+    Args:
+        query: The user's natural language search query.
+    """
+    logger.info("Generating query embedding...")
+    query_vector = get_embedding(query)
 
-    print("Buscando no banco de dados... 🗄️")
-    # O pgvector lê a lista de números nativamente se a passarmos como string: '[0.1, 0.2, ...]'
-    vetor_str = str(vetor_pergunta)
+    logger.info("Searching database with pgvector...")
+    vector_str = str(query_vector)
 
-    query = text("""
-                 SELECT name, content
-                 FROM cards
-                 ORDER BY embedding <=> :vetor 
-        LIMIT :limite
-                 """)
+    sql = text("""
+        SELECT name, content
+        FROM cards
+        ORDER BY embedding <=> :vector
+        LIMIT :limit
+    """)
 
-    # 3. Execução e Exibição
     with engine.connect() as conn:
-        results = conn.execute(query, {"vetor": vetor_str, "limite": 10}).fetchall()
-        model_answer = get_model_answer(question, results);
-    print("\n🏆 Resultados Encontrados:\n")
+        results = conn.execute(
+            sql, {"vector": vector_str, "limit": SEARCH_LIMIT}
+        ).fetchall()
+        model_answer = get_model_answer(query, results)
+
+    print(f"\n🏆 Top {len(results)} Results:\n")
     for i, row in enumerate(results, 1):
         print(f"{i}. {row.name}")
         print(f"   {row.content}")
         print("-" * 60)
-        print(f"Model Answer: {model_answer}")
+
+    print(f"\n💡 AI Answer:\n{model_answer}\n")
 
 
-# 4. Ponto de partida
+def interactive_loop() -> None:
+    """Run the search in an interactive REPL-style loop."""
+    print("\n--- 🔍 Yu-Gi-Oh! Semantic Search ---\n")
+    print("Type your query or 'quit' / 'exit' to leave.\n")
+
+    while True:
+        try:
+            question = input("Query: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nGoodbye! 👋")
+            break
+
+        if not question:
+            continue
+
+        if question.lower() in ("quit", "exit"):
+            print("Goodbye! 👋")
+            break
+
+        try:
+            search_card(question)
+        except Exception:
+            logger.exception("Search failed for query: %s", question)
+            print("An error occurred. Please try again.\n")
+
+
+def main() -> None:
+    """Entry point for the search CLI."""
+    parser = argparse.ArgumentParser(
+        description="Semantic search over Yu-Gi-Oh! cards using RAG."
+    )
+    parser.add_argument(
+        "--query", "-q",
+        type=str,
+        help="Run a single query and exit (non-interactive mode).",
+    )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="Enable debug logging.",
+    )
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
+
+    if args.query:
+        search_card(args.query)
+    else:
+        interactive_loop()
+
+
 if __name__ == "__main__":
-    search_card()
+    main()
