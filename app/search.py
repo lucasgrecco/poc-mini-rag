@@ -40,13 +40,17 @@ def get_model_answer(question: str, results_db: list) -> str:
     context = "\n".join(card_text)
 
     prompt = f"""You are a Yu-Gi-Oh! card expert.
-Your mission is to answer the user's question using ONLY the cards provided in the context below.
-If the answer cannot be found in the cards below, simply say: "I couldn't find any matching cards in my database."
-Do not make up information or effects that are not in the context.
+Use the cards listed below to answer the user's question.
+Always describe relevant cards from the list — do not refuse to answer when cards are present.
+For spell and trap cards, always describe their effects using the card description.
+Only if NONE of the cards below relate to the question at all, say: "I couldn't find relevant cards for that query."
+Do not invent effects, stats, or lore that are not explicitly in the cards below.
 
 CARDS FOUND:
 {context}
 """
+
+    logger.debug("=== PROMPT SENT TO MODEL ===\n%s\n=== END PROMPT ===", prompt)
 
     response = _client.chat.completions.create(
         model=CHAT_MODEL,
