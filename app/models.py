@@ -4,7 +4,7 @@ Defines the ``cards`` table schema, which stores Yu-Gi-Oh! card data
 alongside pre-computed embedding vectors for semantic search.
 """
 
-from sqlalchemy.orm import DeclarativeBase, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Text, ARRAY
 from pgvector.sqlalchemy import Vector
 
@@ -30,12 +30,12 @@ class Card(Base):
 
     __tablename__ = "cards"
 
-    id: int = mapped_column(Integer, primary_key=True)
-    level: int | None = mapped_column(Integer)
-    name: str | None = mapped_column(String)
-    atk: int | None = mapped_column(Integer)
-    def_: int | None = mapped_column(Integer)
-    english_attribute: str | None = mapped_column(String)
-    content: str | None = mapped_column(Text)
-    properties: list[str] | None = mapped_column(ARRAY(String))
-    embedding: list[float] | None = mapped_column(Vector(1536))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    level: Mapped[int | None] = mapped_column(Integer)
+    name: Mapped[str | None] = mapped_column(String)
+    atk: Mapped[int | None] = mapped_column(Integer)
+    def_: Mapped[int | None] = mapped_column(Integer)
+    english_attribute: Mapped[str | None] = mapped_column(String)
+    content: Mapped[str | None] = mapped_column(Text)
+    properties: Mapped[list[str] | None] = mapped_column(ARRAY(String))
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536))
