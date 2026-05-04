@@ -5,7 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.docksal/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
-    <orderEntry type="jdk" jdkName="uv (poc-rag)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="uv Docker Compose (cli)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
