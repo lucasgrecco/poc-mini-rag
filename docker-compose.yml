@@ -9,6 +9,11 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d rag_db"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
 
   cli:
     build: .
@@ -18,7 +23,8 @@ services:
     working_dir: /app
     env_file: .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   db_data:

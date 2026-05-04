@@ -38,38 +38,24 @@ Query: "dragons with more than 2500 ATK"
 
 ## Quick Start
 
-### Prerequisites
-- Docker + Docker Compose
-- OpenAI API key
-
-### 1. Configure
-
-Create a `.env` file:
-```bash
-OPENAI_API_KEY=sk-...
-```
-
-### 2. Start
+### One-command demo (for presentations / non-developers)
 
 ```bash
-make init
+make demo
 ```
 
-### 3. Ingest cards
+Answer the prompts — the script sets up everything and launches the interactive search.
 
-```bash
-docker compose exec cli uv run app/ingest.py
-```
-
-### 4. Search
+### Developer setup
 
 ```bash
-docker compose exec cli uv run app/search.py
+make run                                    # Start containers, deps, migrations
+docker compose exec cli uv run app/ingest.py  # Ingest cards
+docker compose exec cli uv run app/search.py  # Launch search
 ```
 
-```
-Query: dragons with high attack and special effects
-```
+> Requires an OpenAI API key. Copy `.env.example` to `.env` and fill in the values
+> (or let `make demo` prompt you for them).
 
 ---
 
@@ -109,7 +95,9 @@ docker compose exec cli uv run app/search.py
 
 | Command | Action |
 |---|---|
-| `make init` | Start containers + install dependencies |
+| `make init` | Start containers + install dependencies (minimal setup) |
+| `make run` | Full dev setup: containers + deps + migrations |
+| `make demo` | Interactive onboarding → full setup → launches search |
 | `make reset` | Full teardown + recreate |
 | `make exec CMD="..."` | Run arbitrary command in container |
 
@@ -129,9 +117,23 @@ poc-rag/
 ├── alembic/               # Database migrations
 ├── docker-compose.yml
 ├── Dockerfile
+├── .env.example          # Environment variables template
 ├── Makefile
-└── doc.MD                 # Developer documentation
 ```
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | Yes | OpenAI API key for embeddings and chat |
+| `LANGSMITH_TRACING` | No | Enable LangSmith tracing (`true`/`false`) |
+| `LANGSMITH_ENDPOINT` | No | LangSmith API endpoint |
+| `LANGSMITH_API_KEY` | No | LangSmith API key |
+| `LANGSMITH_PROJECT` | No | LangSmith project name |
+
+Copy `.env.example` to `.env` and fill in the values. `.env` is git-ignored and never committed.
 
 ---
 
