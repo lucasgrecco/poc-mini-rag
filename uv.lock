@@ -475,6 +475,7 @@ dependencies = [
     { name = "pgvector" },
     { name = "psycopg2-binary" },
     { name = "sqlalchemy" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -485,6 +486,7 @@ requires-dist = [
     { name = "pgvector", specifier = ">=0.4.2" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
     { name = "sqlalchemy", specifier = ">=2.0.49" },
+    { name = "tqdm", specifier = ">=4.67.0" },
 ]
 
 [[package]]

@@ -50,8 +50,8 @@ Answer the prompts — the script sets up everything and launches the interactiv
 
 ```bash
 make run                                    # Start containers, deps, migrations
-docker compose exec cli uv run app/ingest.py  # Ingest cards
-docker compose exec cli uv run app/search.py  # Launch search
+docker compose exec cli uv run python -m app.ingest  # Ingest cards
+docker compose exec cli uv run python -m app.search  # Launch search
 ```
 
 > Requires an OpenAI API key. Copy `.env.example` to `.env` and fill in the values
@@ -84,13 +84,13 @@ with no special effects.
 
 ```bash
 # Ingestion with custom directory and verbose logging
-docker compose exec cli uv run app/ingest.py --json-dir ./jsons -v
+docker compose exec cli uv run python -m app.ingest --json-dir ./jsons -v
 
 # Single query (non-interactive)
-docker compose exec cli uv run app/search.py --query "spell cards that destroy monsters"
+docker compose exec cli uv run python -m app.search --query "spell cards that destroy monsters"
 
 # Interactive mode (REPL)
-docker compose exec cli uv run app/search.py
+docker compose exec cli uv run python -m app.search
 ```
 
 | Command | Action |

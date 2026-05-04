@@ -173,7 +173,7 @@ ingest_cards() {
     fi
   fi
 
-  if ! docker compose exec -T cli uv run app/ingest.py; then
+  if ! docker compose exec -T cli uv run python -m app.ingest; then
     warn "Ingestion had errors. Launching search with available cards..."
   fi
 }
@@ -183,7 +183,7 @@ ingest_cards() {
 launch_search() {
   divider "Launching search"
   echo ""
-  docker compose exec -it cli uv run app/search.py
+  docker compose exec -it cli uv run python -m app.search
 }
 
 # ── Main ─────────────────────────────────

@@ -11,7 +11,8 @@ run:
 	docker compose up -d
 	docker compose exec cli uv sync
 	docker compose exec cli uv run alembic upgrade head
-	@echo "✓ Ready. Run ingest or search manually."
+	@echo "✓ Ready. Run: docker compose exec cli uv run python -m app.ingest"
+	@echo "            docker compose exec cli uv run python -m app.search"
 
 demo:
 	bash demo.sh
