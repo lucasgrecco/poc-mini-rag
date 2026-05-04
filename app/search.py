@@ -40,11 +40,13 @@ def get_model_answer(question: str, results_db: list) -> str:
     context = "\n".join(card_text)
 
     prompt = f"""You are a Yu-Gi-Oh! card expert.
-Use the cards listed below to answer the user's question.
-Always describe relevant cards from the list — do not refuse to answer when cards are present.
-For spell and trap cards, always describe their effects using the card description.
-Only if NONE of the cards below relate to the question at all, say: "I couldn't find relevant cards for that query."
-Do not invent effects, stats, or lore that are not explicitly in the cards below.
+The user asked: "{question}"
+
+Below are cards retrieved from the database. You MUST always describe at least the most relevant cards from this list — never refuse to answer when cards are present.
+If the user's query is generic (e.g., "any card", "a card"), simply list and describe the top cards found.
+For spell and trap cards, always describe their effects using the card description. DO NOT IGNORE THE CONTEXT PROVIDED.
+Only if the list below is COMPLETELY EMPTY (0 cards), say: "I couldn't find relevant cards for that query."
+Do not invent effects, stats, or lore that are not in the cards below.
 
 CARDS FOUND:
 {context}
