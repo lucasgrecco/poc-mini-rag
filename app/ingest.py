@@ -7,7 +7,7 @@ import json
 import logging
 from pathlib import Path
 
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 from tqdm import tqdm
 
