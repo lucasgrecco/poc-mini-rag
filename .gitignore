@@ -1,3 +1,4 @@
 .docksal/docksal-local.env
 .docksal/docksal-local.yml
 .env
+/assets/
