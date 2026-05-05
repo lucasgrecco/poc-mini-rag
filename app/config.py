@@ -15,7 +15,8 @@ DATABASE_URL = os.getenv(
 # OpenAI
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 EMBEDDING_MODEL = "text-embedding-3-small"
-CHAT_MODEL = "gpt-4o-mini"
+CHAT_MODEL = "gpt-5.4-mini"
+# CHAT_MODEL = "gpt-4o-mini"
 EMBEDDING_DIMENSIONS = 1536
 
 # Search defaults
