@@ -31,6 +31,9 @@ class Card(Base):
     __tablename__ = "cards"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    card_json_id: Mapped[int] = mapped_column(
+        Integer, unique=True, nullable=False, index=True
+    )
     level: Mapped[int | None] = mapped_column(Integer)
     name: Mapped[str | None] = mapped_column(String)
     atk: Mapped[int | None] = mapped_column(Integer)

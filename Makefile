@@ -14,6 +14,9 @@ run:
 	@echo "✓ Ready. Run: docker compose exec cli uv run python -m app.ingest"
 	@echo "            docker compose exec cli uv run python -m app.search"
 
+watch:
+	docker compose exec cli uv run python -m app.watcher
+
 demo:
 	bash demo.sh
 

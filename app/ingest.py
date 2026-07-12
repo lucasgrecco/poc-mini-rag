@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 
 from sqlalchemy import create_engine, func, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session, sessionmaker
 from tqdm import tqdm
 
@@ -65,6 +66,52 @@ def build_card_content(card_json: dict) -> str:
     return full_content
 
 
+def upsert_card(card_json: dict, session: Session) -> None:
+    """Upsert a single card by card_json_id. Does NOT commit.
+
+    If a card with the same card_json_id already exists, its fields are updated.
+    Otherwise, a new row is inserted.
+
+    Args:
+        card_json: Raw card data from a JSON file.
+        session: An active SQLAlchemy session.
+
+    Raises:
+        ValueError: If card_json has no 'id' field.
+    """
+    card_id = card_json.get("id")
+    if card_id is None:
+        raise ValueError("Card JSON missing 'id' field")
+
+    content = build_card_content(card_json)
+    vector = get_embedding(content)
+
+    stmt = pg_insert(Card).values(
+        card_json_id=card_id,
+        name=card_json.get("name"),
+        level=clean_int(card_json.get("level")),
+        atk=clean_int(card_json.get("atk")),
+        def_=clean_int(card_json.get("def")),
+        english_attribute=card_json.get("englishAttribute"),
+        properties=card_json.get("properties"),
+        content=content,
+        embedding=vector,
+    ).on_conflict_do_update(
+        index_elements=["card_json_id"],
+        set_=dict(
+            name=card_json.get("name"),
+            level=clean_int(card_json.get("level")),
+            atk=clean_int(card_json.get("atk")),
+            def_=clean_int(card_json.get("def")),
+            english_attribute=card_json.get("englishAttribute"),
+            properties=card_json.get("properties"),
+            content=content,
+            embedding=vector,
+        ),
+    )
+    session.execute(stmt)
+
+
 def process_jsons(json_dir: str, session: Session) -> int:
     """Ingest all JSON card files from the given directory.
 
@@ -88,30 +135,15 @@ def process_jsons(json_dir: str, session: Session) -> int:
         with open(json_file, "r", encoding="utf-8") as f:
             card_json = json.load(f)
 
-        content = build_card_content(card_json)
-
         name = card_json.get("name")
         logger.debug("Processing: %s", name)
 
         try:
-            vector = get_embedding(content)
+            upsert_card(card_json, session)
+            count += 1
         except Exception:
-            logger.exception("Failed to generate embedding for card: %s", name)
+            logger.exception("Failed to upsert card: %s", name)
             continue
-
-        new_card = Card(
-            name=name,
-            level=clean_int(card_json.get("level")),
-            atk=clean_int(card_json.get("atk")),
-            def_=clean_int(card_json.get("def")),
-            english_attribute=card_json.get("englishAttribute"),
-            properties=card_json.get("properties"),
-            content=content,
-            embedding=vector,
-        )
-
-        session.add(new_card)
-        count += 1
 
     session.commit()
     return count
