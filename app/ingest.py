@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from tqdm import tqdm
 
 from app.config import DATABASE_URL, DEFAULT_JSON_DIR
-from app.embeddings import get_embedding
+from app.embeddings import get_embedding, get_embeddings_batch
 from app.models import Base, Card
 
 logger = logging.getLogger(__name__)
@@ -66,14 +66,17 @@ def build_card_content(card_json: dict) -> str:
     return full_content
 
 
-def upsert_card(card_json: dict, session: Session) -> None:
-    """Upsert a single card by card_json_id. Does NOT commit.
+BATCH_SIZE = 100  # Safe margin below OpenAI's 2048 input limit
 
-    If a card with the same card_json_id already exists, its fields are updated.
-    Otherwise, a new row is inserted.
+
+def upsert_card_with_vector(
+    card_json: dict, vector: list[float], session: Session
+) -> None:
+    """Upsert a single card with a pre-computed embedding vector. Does NOT commit.
 
     Args:
         card_json: Raw card data from a JSON file.
+        vector: Pre-computed embedding vector.
         session: An active SQLAlchemy session.
 
     Raises:
@@ -84,7 +87,6 @@ def upsert_card(card_json: dict, session: Session) -> None:
         raise ValueError("Card JSON missing 'id' field")
 
     content = build_card_content(card_json)
-    vector = get_embedding(content)
 
     stmt = pg_insert(Card).values(
         card_json_id=card_id,
@@ -112,8 +114,30 @@ def upsert_card(card_json: dict, session: Session) -> None:
     session.execute(stmt)
 
 
+def upsert_card(card_json: dict, session: Session) -> None:
+    """Upsert a single card by card_json_id. Does NOT commit.
+
+    Generates the embedding via the OpenAI API, then delegates to
+    :func:`upsert_card_with_vector`.
+
+    Args:
+        card_json: Raw card data from a JSON file.
+        session: An active SQLAlchemy session.
+
+    Raises:
+        ValueError: If card_json has no 'id' field.
+        openai.APIError: If the embedding API call fails.
+    """
+    content = build_card_content(card_json)
+    vector = get_embedding(content)
+    upsert_card_with_vector(card_json, vector, session)
+
+
 def process_jsons(json_dir: str, session: Session) -> int:
-    """Ingest all JSON card files from the given directory.
+    """Ingest all JSON card files from the given directory using batch embeddings.
+
+    Cards are processed in batches of BATCH_SIZE to minimize OpenAI API calls.
+    If a batch embedding call fails, falls back to individual processing.
 
     Args:
         json_dir: Path to the directory containing ``.json`` card files.
@@ -130,20 +154,49 @@ def process_jsons(json_dir: str, session: Session) -> int:
         return 0
 
     count = 0
+    total = len(json_files)
 
-    for json_file in tqdm(json_files, desc="Ingesting cards", unit="card"):
-        with open(json_file, "r", encoding="utf-8") as f:
-            card_json = json.load(f)
+    # Process in batches
+    for i in tqdm(range(0, total, BATCH_SIZE), desc="Ingesting cards", unit="batch"):
+        batch_files = json_files[i:i + BATCH_SIZE]
+        batch_cards: list[dict] = []
+        batch_texts: list[str] = []
 
-        name = card_json.get("name")
-        logger.debug("Processing: %s", name)
+        # Read all JSONs in this batch
+        for json_file in batch_files:
+            with open(json_file, "r", encoding="utf-8") as f:
+                card_json = json.load(f)
+            content = build_card_content(card_json)
+            batch_cards.append(card_json)
+            batch_texts.append(content)
 
+        # Single API call for the whole batch
         try:
-            upsert_card(card_json, session)
-            count += 1
+            embeddings = get_embeddings_batch(batch_texts)
         except Exception:
-            logger.exception("Failed to upsert card: %s", name)
+            logger.exception(
+                "Batch embedding failed for batch %d, falling back to individual",
+                i // BATCH_SIZE,
+            )
+            # Fallback: process one by one
+            for card_json in batch_cards:
+                try:
+                    upsert_card(card_json, session)
+                    count += 1
+                except Exception:
+                    logger.exception("Failed: %s", card_json.get("name"))
             continue
+
+        # Upsert each card with its pre-computed embedding
+        assert len(embeddings) == len(batch_cards), (
+            f"Embedding count mismatch: {len(embeddings)} != {len(batch_cards)}"
+        )
+        for card_json, vector in zip(batch_cards, embeddings):
+            try:
+                upsert_card_with_vector(card_json, vector, session)
+                count += 1
+            except Exception:
+                logger.exception("Failed: %s", card_json.get("name"))
 
     session.commit()
     return count

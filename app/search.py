@@ -12,6 +12,7 @@ from langsmith import traceable
 from sqlalchemy import create_engine, text
 from openai import OpenAI
 from langsmith.wrappers import wrap_openai
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.config import DATABASE_URL, CHAT_MODEL, SEARCH_LIMIT
 from app.embeddings import get_embedding
@@ -22,6 +23,11 @@ engine = create_engine(DATABASE_URL)
 _client = wrap_openai(OpenAI())
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
+    reraise=True,
+)
 @traceable(run_type="tool", name="Chat with model")
 def get_model_answer(question: str, results_db: list) -> str:
     """Generate a natural language answer from retrieved card results.
