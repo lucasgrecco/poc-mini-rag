@@ -3,3 +3,10 @@
 .env
 /assets/
 .idea
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.env
+.env.bkp
+.pi-subagents/
