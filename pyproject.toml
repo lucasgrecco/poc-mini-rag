@@ -12,4 +12,16 @@ dependencies = [
     "tqdm>=4.67.0",
     "tenacity>=9.0.0",
     "watchdog>=6.0.0",
+    "mcp>=1.27,<2",
+    "asyncpg>=0.30.0",
+    "greenlet>=3.0.0",
 ]
+
+[project.scripts]
+ygo-search = "app.mcp_server:main"
+
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+include = ["app*"]

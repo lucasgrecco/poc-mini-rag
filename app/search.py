@@ -41,7 +41,7 @@ def get_model_answer(question: str, results_db: list) -> str:
     """
     card_text = []
     for row in results_db:
-        card_text.append(f"- {row.name}: {row.content}")
+        card_text.append(f"- {row['name']}: {row['content']}")
 
     context = "\n".join(card_text)
 
