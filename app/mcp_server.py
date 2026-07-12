@@ -19,12 +19,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from app.config import (
     DATABASE_URL,
-    EMBEDDING_MODEL,
-    CHAT_MODEL,
     SEARCH_LIMIT,
 )
-from app.embeddings import get_embedding
-from app.search import get_model_answer
+from app.embeddings import get_local_embedding
+
+# MCP always uses local embeddings — no API key needed, pure retrieval
+EMBEDDING_COLUMN = "embedding_local"
 
 logger = logging.getLogger(__name__)
 
@@ -74,14 +74,13 @@ mcp = FastMCP(
 async def search_cards(
     query: str,
     limit: int = SEARCH_LIMIT,
-    verbose: bool = False,
     ctx: Context = None,
 ) -> str:
-    """Semantic search over Yu-Gi-Oh! cards using RAG (Retrieval-Augmented Generation).
+    """Semantic search over Yu-Gi-Oh! cards using pgvector.
 
     Retrieves the most semantically similar cards to your query using
-    pgvector cosine similarity on OpenAI embeddings, then generates an
-    AI-powered answer grounded in the retrieved card data.
+    pgvector cosine similarity on embeddings. Returns raw card data —
+    the host AI (Pi, Claude Code) does its own reasoning on the results.
 
     Use this when you need to find cards matching a natural language
     description, e.g. "dragons with more than 2500 ATK" or
@@ -90,10 +89,9 @@ async def search_cards(
     Args:
         query: Natural language query describing what cards you want.
         limit: Number of cards to retrieve (1-50, default 10).
-        verbose: If true, include full card details in the response.
 
     Returns:
-        AI-generated answer with the top matching cards listed.
+        Raw card data for the top matching cards.
     """
     limit = max(1, min(limit, 50))
 
@@ -101,7 +99,7 @@ async def search_cards(
 
     # Generate query embedding (blocking call → run in thread)
     try:
-        query_vector = await asyncio.to_thread(get_embedding, query)
+        query_vector = await asyncio.to_thread(get_local_embedding, query)
     except Exception as e:
         return f"Failed to generate embedding: {e}"
 
@@ -111,10 +109,10 @@ async def search_cards(
         async with server_ctx.session_factory() as session:
             # Convert embedding list to pgvector-compatible string for asyncpg
             vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
-            sql = text("""
+            sql = text(f"""
                 SELECT name, content
                 FROM cards
-                ORDER BY embedding <=> CAST(:query_vec AS vector)
+                ORDER BY {EMBEDDING_COLUMN} <=> CAST(:query_vec AS vector)
                 LIMIT :limit
             """)
             result = await session.execute(
@@ -128,26 +126,12 @@ async def search_cards(
     if not rows:
         return "No cards found matching your query."
 
-    # Format results for the LLM
-    results_db = [
-        {"name": row["name"], "content": row["content"]}
-        for row in rows
-    ]
-
-    # Generate AI answer (blocking call → run in thread)
-    await ctx.info("Generating AI answer...")
-    try:
-        answer = await asyncio.to_thread(get_model_answer, query, results_db)
-    except Exception as e:
-        answer = f"(AI answer unavailable: {e})"
-
-    # Build response
-    lines = [answer, "", "---", f"Top {len(rows)} Results:", ""]
+    # Return raw results — host AI does its own reasoning
+    lines = [f"Top {len(rows)} results for: {query}", ""]
     for i, row in enumerate(rows, 1):
         lines.append(f"{i}. {row['name']}")
-        if verbose:
-            lines.append(f"   {row['content']}")
-            lines.append("")
+        lines.append(f"   {row['content']}")
+        lines.append("")
 
     return "\n".join(lines)
 

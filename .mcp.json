@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "ygo-search": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "ygo-search"],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "DATABASE_URL": "postgresql+psycopg2://admin:admin@localhost/rag_db",
+        "CARD_JSON_DIR": "/cards/en"
+      }
+    }
+  }
+}

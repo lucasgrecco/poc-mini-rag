@@ -14,10 +14,12 @@ DATABASE_URL = os.getenv(
 
 # OpenAI
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+EMBEDDING_PROVIDER = "openai" if OPENAI_API_KEY else "local"
 EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_LOCAL_MODEL = "mixedbread-ai/mxbai-embed-large-v1"
 CHAT_MODEL = "gpt-5.4-mini"
-# CHAT_MODEL = "gpt-4o-mini"
 EMBEDDING_DIMENSIONS = 1536
+EMBEDDING_LOCAL_DIMENSIONS = 1024
 
 # Search defaults
 SEARCH_LIMIT = 10

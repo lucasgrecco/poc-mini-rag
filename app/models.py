@@ -8,6 +8,8 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Text, ARRAY
 from pgvector.sqlalchemy import Vector
 
+from app.config import EMBEDDING_DIMENSIONS, EMBEDDING_LOCAL_DIMENSIONS
+
 
 class Base(DeclarativeBase):
     """Declarative base class for all ORM models."""
@@ -26,6 +28,7 @@ class Card(Base):
         content: Concatenated text representation used to generate the embedding.
         properties: List of card properties (e.g. ``["Dragon", "Normal"]``).
         embedding: 1536-dimensional float vector from OpenAI embeddings.
+        embedding_local: 1024-dimensional float vector from local mxbai-embed-large-v1.
     """
 
     __tablename__ = "cards"
@@ -41,4 +44,9 @@ class Card(Base):
     english_attribute: Mapped[str | None] = mapped_column(String)
     content: Mapped[str | None] = mapped_column(Text)
     properties: Mapped[list[str] | None] = mapped_column(ARRAY(String))
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536))
+    embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(EMBEDDING_DIMENSIONS)
+    )
+    embedding_local: Mapped[list[float] | None] = mapped_column(
+        Vector(EMBEDDING_LOCAL_DIMENSIONS)
+    )

@@ -14,8 +14,10 @@ from openai import OpenAI
 from langsmith.wrappers import wrap_openai
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from app.config import DATABASE_URL, CHAT_MODEL, SEARCH_LIMIT
+from app.config import DATABASE_URL, CHAT_MODEL, SEARCH_LIMIT, EMBEDDING_PROVIDER
 from app.embeddings import get_embedding
+
+EMBEDDING_COLUMN = "embedding" if EMBEDDING_PROVIDER == "openai" else "embedding_local"
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,7 @@ def get_model_answer(question: str, results_db: list) -> str:
     """
     card_text = []
     for row in results_db:
-        card_text.append(f"- {row['name']}: {row['content']}")
+        card_text.append(f"- {row.name}: {row.content}")
 
     context = "\n".join(card_text)
 
@@ -85,10 +87,10 @@ def search_card(query: str) -> None:
     logger.info("Searching database with pgvector...")
     vector_str = str(query_vector)
 
-    sql = text("""
+    sql = text(f"""
         SELECT name, content
         FROM cards
-        ORDER BY embedding <=> :vector
+        ORDER BY {EMBEDDING_COLUMN} <=> :vector
         LIMIT :limit
     """)
 

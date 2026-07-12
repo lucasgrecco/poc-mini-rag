@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from tqdm import tqdm
 
 from app.config import DATABASE_URL, DEFAULT_JSON_DIR
-from app.embeddings import get_embedding, get_embeddings_batch
+from app.embeddings import get_embedding, get_both_embeddings, get_both_embeddings_batch
 from app.models import Base, Card
 
 logger = logging.getLogger(__name__)
@@ -69,14 +69,18 @@ def build_card_content(card_json: dict) -> str:
 BATCH_SIZE = 100  # Safe margin below OpenAI's 2048 input limit
 
 
-def upsert_card_with_vector(
-    card_json: dict, vector: list[float], session: Session
+def upsert_card_with_vectors(
+    card_json: dict,
+    openai_vector: list[float] | None,
+    local_vector: list[float] | None,
+    session: Session,
 ) -> None:
-    """Upsert a single card with a pre-computed embedding vector. Does NOT commit.
+    """Upsert a single card with pre-computed embedding vectors. Does NOT commit.
 
     Args:
         card_json: Raw card data from a JSON file.
-        vector: Pre-computed embedding vector.
+        openai_vector: Pre-computed OpenAI embedding (or None).
+        local_vector: Pre-computed local embedding (or None).
         session: An active SQLAlchemy session.
 
     Raises:
@@ -88,37 +92,56 @@ def upsert_card_with_vector(
 
     content = build_card_content(card_json)
 
-    stmt = pg_insert(Card).values(
-        card_json_id=card_id,
-        name=card_json.get("name"),
-        level=clean_int(card_json.get("level")),
-        atk=clean_int(card_json.get("atk")),
-        def_=clean_int(card_json.get("def")),
-        english_attribute=card_json.get("englishAttribute"),
-        properties=card_json.get("properties"),
-        content=content,
-        embedding=vector,
-    ).on_conflict_do_update(
+    values = {
+        "card_json_id": card_id,
+        "name": card_json.get("name"),
+        "level": clean_int(card_json.get("level")),
+        "atk": clean_int(card_json.get("atk")),
+        "def_": clean_int(card_json.get("def")),
+        "english_attribute": card_json.get("englishAttribute"),
+        "properties": card_json.get("properties"),
+        "content": content,
+    }
+    if openai_vector is not None:
+        values["embedding"] = openai_vector
+    if local_vector is not None:
+        values["embedding_local"] = local_vector
+
+    stmt = pg_insert(Card).values(**values).on_conflict_do_update(
         index_elements=["card_json_id"],
-        set_=dict(
-            name=card_json.get("name"),
-            level=clean_int(card_json.get("level")),
-            atk=clean_int(card_json.get("atk")),
-            def_=clean_int(card_json.get("def")),
-            english_attribute=card_json.get("englishAttribute"),
-            properties=card_json.get("properties"),
-            content=content,
-            embedding=vector,
-        ),
+        set_=values,
     )
     session.execute(stmt)
+
+
+def upsert_card_with_vector(
+    card_json: dict, vector: list[float], session: Session
+) -> None:
+    """Upsert a single card with a pre-computed embedding vector. Does NOT commit.
+
+    Uses the auto-detected provider to decide which column to populate.
+
+    Args:
+        card_json: Raw card data from a JSON file.
+        vector: Pre-computed embedding vector.
+        session: An active SQLAlchemy session.
+
+    Raises:
+        ValueError: If card_json has no 'id' field.
+    """
+    from app.config import EMBEDDING_PROVIDER
+
+    if EMBEDDING_PROVIDER == "openai":
+        upsert_card_with_vectors(card_json, vector, None, session)
+    else:
+        upsert_card_with_vectors(card_json, None, vector, session)
 
 
 def upsert_card(card_json: dict, session: Session) -> None:
     """Upsert a single card by card_json_id. Does NOT commit.
 
-    Generates the embedding via the OpenAI API, then delegates to
-    :func:`upsert_card_with_vector`.
+    Generates BOTH OpenAI and local embeddings, then delegates to
+    :func:`upsert_card_with_vectors`.
 
     Args:
         card_json: Raw card data from a JSON file.
@@ -126,11 +149,10 @@ def upsert_card(card_json: dict, session: Session) -> None:
 
     Raises:
         ValueError: If card_json has no 'id' field.
-        openai.APIError: If the embedding API call fails.
     """
     content = build_card_content(card_json)
-    vector = get_embedding(content)
-    upsert_card_with_vector(card_json, vector, session)
+    openai_vec, local_vec = get_both_embeddings(content)
+    upsert_card_with_vectors(card_json, openai_vec, local_vec, session)
 
 
 def process_jsons(json_dir: str, session: Session) -> int:
@@ -170,9 +192,9 @@ def process_jsons(json_dir: str, session: Session) -> int:
             batch_cards.append(card_json)
             batch_texts.append(content)
 
-        # Single API call for the whole batch
+        # Single API call for the whole batch (both providers)
         try:
-            embeddings = get_embeddings_batch(batch_texts)
+            openai_vecs, local_vecs = get_both_embeddings_batch(batch_texts)
         except Exception:
             logger.exception(
                 "Batch embedding failed for batch %d, falling back to individual",
@@ -187,13 +209,14 @@ def process_jsons(json_dir: str, session: Session) -> int:
                     logger.exception("Failed: %s", card_json.get("name"))
             continue
 
-        # Upsert each card with its pre-computed embedding
-        assert len(embeddings) == len(batch_cards), (
-            f"Embedding count mismatch: {len(embeddings)} != {len(batch_cards)}"
-        )
-        for card_json, vector in zip(batch_cards, embeddings):
+        # Upsert each card with both embeddings
+        for j, card_json in enumerate(batch_cards):
             try:
-                upsert_card_with_vector(card_json, vector, session)
+                openai_vec = openai_vecs[j] if openai_vecs else None
+                local_vec = local_vecs[j] if local_vecs else None
+                upsert_card_with_vectors(
+                    card_json, openai_vec, local_vec, session
+                )
                 count += 1
             except Exception:
                 logger.exception("Failed: %s", card_json.get("name"))
