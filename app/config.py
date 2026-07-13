@@ -22,7 +22,7 @@ EMBEDDING_DIMENSIONS = 1536
 EMBEDDING_LOCAL_DIMENSIONS = 1024
 
 # Search defaults
-SEARCH_LIMIT = 10
+SEARCH_LIMIT = 30
 
 # Ingestion defaults
 DEFAULT_JSON_DIR = os.getenv("CARD_JSON_DIR", "jsons")

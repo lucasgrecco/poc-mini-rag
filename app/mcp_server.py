@@ -21,7 +21,6 @@ from app.config import (
     DATABASE_URL,
     SEARCH_LIMIT,
 )
-from app.embeddings import get_local_embedding
 
 # MCP always uses local embeddings — no API key needed, pure retrieval
 EMBEDDING_COLUMN = "embedding_local"
@@ -66,7 +65,6 @@ async def lifespan(server: FastMCP):
 mcp = FastMCP(
     "ygo-search",
     lifespan=lifespan,
-    json_response=True,
 )
 
 
@@ -98,6 +96,7 @@ async def search_cards(
     await ctx.info(f"Searching cards for: {query}")
 
     # Generate query embedding (blocking call → run in thread)
+    from app.embeddings import get_local_embedding  # Lazy import: avoids 4s sentence-transformers load at startup
     try:
         query_vector = await asyncio.to_thread(get_local_embedding, query)
     except Exception as e:
@@ -182,7 +181,8 @@ async def get_card(
 
 def main():
     """Entry point for the MCP server (stdio transport)."""
-    mcp.run()
+    import asyncio
+    asyncio.run(mcp.run_stdio_async())
 
 
 if __name__ == "__main__":

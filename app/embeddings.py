@@ -64,6 +64,13 @@ def _get_local_model() -> SentenceTransformer:
         _local_model = SentenceTransformer(
             EMBEDDING_LOCAL_MODEL, device="cuda"
         )
+        try:
+            _local_model.encode("test")
+        except RuntimeError:
+            logger.warning("CUDA OOM, falling back to CPU")
+            _local_model = SentenceTransformer(
+                EMBEDDING_LOCAL_MODEL, device="cpu"
+            )
         logger.info("Local model loaded successfully on CUDA")
     return _local_model
 
