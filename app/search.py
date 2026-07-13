@@ -9,13 +9,20 @@ import argparse
 import logging
 
 from langsmith import traceable
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from openai import OpenAI
 from langsmith.wrappers import wrap_openai
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from app.config import DATABASE_URL, CHAT_MODEL, SEARCH_LIMIT, EMBEDDING_PROVIDER
+from app.config import (
+    DATABASE_URL,
+    CHAT_MODEL,
+    SEARCH_LIMIT,
+    EMBEDDING_PROVIDER,
+    CANDIDATE_POOL_SIZE,
+)
 from app.embeddings import get_embedding
+from app.retrieval import hybrid_search_sync, rerank
 
 EMBEDDING_COLUMN = "embedding" if EMBEDDING_PROVIDER == "openai" else "embedding_local"
 
@@ -43,7 +50,7 @@ def get_model_answer(question: str, results_db: list) -> str:
     """
     card_text = []
     for row in results_db:
-        card_text.append(f"- {row.name}: {row.content}")
+        card_text.append(f"- {row['name']}: {row['content']}")
 
     context = "\n".join(card_text)
 
@@ -75,35 +82,64 @@ CARDS FOUND:
 
 
 @traceable(name="Chat Pipeline")
-def search_card(query: str) -> None:
-    """Execute a single semantic search query.
+def search_card(
+    query: str,
+    min_atk: int | None = None,
+    max_atk: int | None = None,
+    min_def: int | None = None,
+    max_def: int | None = None,
+    level: int | None = None,
+    attribute: str | None = None,
+    card_type: str | None = None,
+) -> None:
+    """Execute a single hybrid search query (vector + lexical + rerank).
+
+    `query` alone is semantic-only and won't reliably enforce numeric or
+    categorical constraints — pass those via the structured filter args
+    (e.g. card_type="Dragon", min_atk=2500) instead of relying on the
+    embedding to capture them.
 
     Args:
         query: The user's natural language search query.
+        min_atk: Minimum ATK (inclusive).
+        max_atk: Maximum ATK (inclusive).
+        min_def: Minimum DEF (inclusive).
+        max_def: Maximum DEF (inclusive).
+        level: Exact card level/rank.
+        attribute: Exact attribute (e.g. "light", "dark", "wind").
+        card_type: A value that must appear in the card's properties/type list.
     """
     logger.info("Generating query embedding...")
     query_vector = get_embedding(query)
 
-    logger.info("Searching database with pgvector...")
-    vector_str = str(query_vector)
-
-    sql = text(f"""
-        SELECT name, content
-        FROM cards
-        ORDER BY {EMBEDDING_COLUMN} <=> :vector
-        LIMIT :limit
-    """)
+    logger.info("Searching database with hybrid vector+lexical retrieval...")
+    filters = {
+        "min_atk": min_atk,
+        "max_atk": max_atk,
+        "min_def": min_def,
+        "max_def": max_def,
+        "level": level,
+        "attribute": attribute,
+        "card_type": card_type,
+    }
+    candidate_pool_size = max(CANDIDATE_POOL_SIZE, SEARCH_LIMIT * 2)
 
     with engine.connect() as conn:
-        results = conn.execute(
-            sql, {"vector": vector_str, "limit": SEARCH_LIMIT}
-        ).fetchall()
+        candidates = hybrid_search_sync(
+            conn,
+            query,
+            query_vector,
+            EMBEDDING_COLUMN,
+            filters=filters,
+            candidate_pool_size=candidate_pool_size,
+        )
+        results = rerank(query, candidates, SEARCH_LIMIT)
         model_answer = get_model_answer(query, results)
 
     print(f"\n🏆 Top {len(results)} Results:\n")
     for i, row in enumerate(results, 1):
-        print(f"{i}. {row.name}")
-        print(f"   {row.content}")
+        print(f"{i}. {row['name']}")
+        print(f"   {row['content']}")
         print("-" * 60)
 
     print(f"\n💡 AI Answer:\n{model_answer}\n")
@@ -150,6 +186,13 @@ def main() -> None:
         action="store_true",
         help="Enable debug logging.",
     )
+    parser.add_argument("--min-atk", type=int, default=None, help="Minimum ATK (inclusive).")
+    parser.add_argument("--max-atk", type=int, default=None, help="Maximum ATK (inclusive).")
+    parser.add_argument("--min-def", type=int, default=None, help="Minimum DEF (inclusive).")
+    parser.add_argument("--max-def", type=int, default=None, help="Maximum DEF (inclusive).")
+    parser.add_argument("--level", type=int, default=None, help="Exact card level/rank.")
+    parser.add_argument("--attribute", type=str, default=None, help="Exact attribute (e.g. light, dark).")
+    parser.add_argument("--card-type", type=str, default=None, help="Value that must appear in properties (e.g. Dragon).")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -158,7 +201,16 @@ def main() -> None:
     )
 
     if args.query:
-        search_card(args.query)
+        search_card(
+            args.query,
+            min_atk=args.min_atk,
+            max_atk=args.max_atk,
+            min_def=args.min_def,
+            max_def=args.max_def,
+            level=args.level,
+            attribute=args.attribute,
+            card_type=args.card_type,
+        )
     else:
         interactive_loop()
 

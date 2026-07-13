@@ -20,7 +20,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.config import (
     DATABASE_URL,
     SEARCH_LIMIT,
+    CANDIDATE_POOL_SIZE,
 )
+from app.retrieval import hybrid_search_async, rerank
 
 # MCP always uses local embeddings — no API key needed, pure retrieval
 EMBEDDING_COLUMN = "embedding_local"
@@ -72,26 +74,52 @@ mcp = FastMCP(
 async def search_cards(
     query: str,
     limit: int = SEARCH_LIMIT,
+    min_atk: int | None = None,
+    max_atk: int | None = None,
+    min_def: int | None = None,
+    max_def: int | None = None,
+    level: int | None = None,
+    attribute: str | None = None,
+    card_type: str | None = None,
     ctx: Context = None,
 ) -> str:
-    """Semantic search over Yu-Gi-Oh! cards using pgvector.
+    """Hybrid search over Yu-Gi-Oh! cards: vector + lexical fusion + reranking.
 
-    Retrieves the most semantically similar cards to your query using
-    pgvector cosine similarity on embeddings. Returns raw card data —
-    the host AI (Pi, Claude Code) does its own reasoning on the results.
+    Combines pgvector cosine similarity, pg_trgm lexical name matching (via
+    Reciprocal Rank Fusion), and cross-encoder reranking. Returns raw card
+    data — the host AI (Pi, Claude Code) does its own reasoning on the
+    results.
 
-    Use this when you need to find cards matching a natural language
-    description, e.g. "dragons with more than 2500 ATK" or
-    "spell cards that destroy monsters".
+    IMPORTANT: `query` alone is semantic-only and will NOT reliably enforce
+    numeric or categorical constraints (e.g. "ATK above 2500", "Dragon-type",
+    "Level 8") — embeddings capture meaning, not exact thresholds. Extract
+    any such constraint from the user's request yourself and pass it via the
+    structured parameters below; only put the free-text/descriptive part in
+    `query`.
+
+    Example: user asks "dragões fortes com mais de 2500 de ataque" ->
+        search_cards(query="dragões fortes", card_type="Dragon", min_atk=2500)
+    Example: user asks for a specific card by name ->
+        search_cards(query="Blue-Eyes White Dragon")  # lexical fusion ranks
+        the exact name match to the top even if the embedding alone wouldn't.
 
     Args:
-        query: Natural language query describing what cards you want.
-        limit: Number of cards to retrieve (1-50, default 10).
+        query: Natural language / descriptive part of the query.
+        limit: Number of cards to return (1-50, default 10).
+        min_atk: Minimum ATK (inclusive).
+        max_atk: Maximum ATK (inclusive).
+        min_def: Minimum DEF (inclusive).
+        max_def: Maximum DEF (inclusive).
+        level: Exact card level/rank.
+        attribute: Exact attribute (e.g. "light", "dark", "wind").
+        card_type: A value that must appear in the card's properties/type
+            list (e.g. "Dragon", "Spell", "Xyz", "Effect").
 
     Returns:
         Raw card data for the top matching cards.
     """
     limit = max(1, min(limit, 50))
+    candidate_pool_size = max(CANDIDATE_POOL_SIZE, limit * 2)
 
     await ctx.info(f"Searching cards for: {query}")
 
@@ -102,28 +130,34 @@ async def search_cards(
     except Exception as e:
         return f"Failed to generate embedding: {e}"
 
-    # Search via pgvector cosine distance
+    # Hybrid vector + lexical candidate retrieval, then rerank
     server_ctx = ctx.request_context.lifespan_context
+    filters = {
+        "min_atk": min_atk,
+        "max_atk": max_atk,
+        "min_def": min_def,
+        "max_def": max_def,
+        "level": level,
+        "attribute": attribute,
+        "card_type": card_type,
+    }
     try:
         async with server_ctx.session_factory() as session:
-            # Convert embedding list to pgvector-compatible string for asyncpg
-            vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
-            sql = text(f"""
-                SELECT name, content
-                FROM cards
-                ORDER BY {EMBEDDING_COLUMN} <=> CAST(:query_vec AS vector)
-                LIMIT :limit
-            """)
-            result = await session.execute(
-                sql, {"query_vec": vector_str, "limit": limit}
+            candidates = await hybrid_search_async(
+                session,
+                query,
+                query_vector,
+                EMBEDDING_COLUMN,
+                filters=filters,
+                candidate_pool_size=candidate_pool_size,
             )
-            rows = result.mappings().all()
-            rows = [dict(r) for r in rows]
     except Exception as e:
         return f"Database query failed: {e}"
 
-    if not rows:
+    if not candidates:
         return "No cards found matching your query."
+
+    rows = await asyncio.to_thread(rerank, query, candidates, limit)
 
     # Return raw results — host AI does its own reasoning
     lines = [f"Top {len(rows)} results for: {query}", ""]

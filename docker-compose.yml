@@ -1,6 +1,6 @@
 services:
   db:
-    image: ankane/pgvector:latest
+    image: pgvector/pgvector:pg15
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin

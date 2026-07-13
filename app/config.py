@@ -24,5 +24,10 @@ EMBEDDING_LOCAL_DIMENSIONS = 1024
 # Search defaults
 SEARCH_LIMIT = 30
 
+# Retrieval: hybrid vector+lexical fusion and reranking
+RERANK_MODEL = "BAAI/bge-reranker-v2-m3"
+CANDIDATE_POOL_SIZE = 40
+RRF_K = 60
+
 # Ingestion defaults
 DEFAULT_JSON_DIR = os.getenv("CARD_JSON_DIR", "jsons")
