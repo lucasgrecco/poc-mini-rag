@@ -5,7 +5,9 @@ Ask natural language questions and get AI-powered answers grounded in real card 
 
 ```
 Query: "dragons with more than 2500 ATK"
-  → Retrieves top 10 semantically similar cards via pgvector
+  → Structured filter (card_type="Dragon", min_atk=2500) narrows the candidate set
+  → Hybrid vector + lexical retrieval (RRF) ranks candidates within that set
+  → Cross-encoder reranks the pool
   → LLM generates a summarized answer from those cards
 ```
 
@@ -21,15 +23,21 @@ Query: "dragons with more than 2500 ATK"
                          ┌─────────┐                   │
                          │ Watcher │ (auto-reindex)    │
                          └─────────┘                   │
-                     ┌─────────────────┐                │
-                     │  app/search.py  │◀───────────────┘
-  User query ────────▶│  + GPT-5.4-mini │
-                     │  (OpenAI emb.)  │
-                     └─────────────────┘
-                     ┌─────────────────┐
-                     │  app/mcp_server  │◀───────────────┘
+                                                        ▼
+                                          ┌───────────────────────┐
+                                          │  app/retrieval.py     │
+                                          │  filter + RRF fusion  │
+                                          │  + cross-encoder      │
+                                          └───────────┬───────────┘
+                     ┌─────────────────┐              │
+                     │  app/search.py  │◀─────────────┤
+  User query ────────▶│  + GPT-5.4-mini │              │
+                     │  (OpenAI emb.)  │              │
+                     └─────────────────┘              │
+                     ┌─────────────────┐              │
+                     │  app/mcp_server  │◀─────────────┘
   MCP host ──────────▶│  (local emb.)   │
-  (Pi, Claude Code)   │  pure retrieval  │
+  (Pi, Claude Code)   │  hybrid retrieval│
                      └─────────────────┘
 ```
 
@@ -40,7 +48,8 @@ Query: "dragons with more than 2500 ATK"
 | OpenAI Embeddings | `text-embedding-3-small` (1536 dims) |
 | Local Embeddings | `mxbai-embed-large-v1` (1024 dims, GPU/CUDA) |
 | LLM | OpenAI `gpt-5.4-mini` |
-| MCP Server | FastMCP (stdio transport, pure retrieval) |
+| Reranker | `BAAI/bge-reranker-v2-m3` (cross-encoder, GPU/CUDA) |
+| MCP Server | FastMCP (stdio transport, hybrid retrieval) |
 | Observability | LangSmith tracing |
 | Infrastructure | Docker Compose (with NVIDIA GPU support) |
 
@@ -66,15 +75,73 @@ for local embeddings — there is no CPU fallback.
 
 ---
 
+## Retrieval Pipeline
+
+`app/retrieval.py` is the shared retrieval core used by both `app.search` and
+`app.mcp_server` — neither writes raw SQL directly anymore.
+
+**Structured filters** — semantic embeddings capture meaning, not exact
+numeric/categorical constraints. Pass those separately instead of hoping the
+embedding encodes them:
+
+| Filter | Matches |
+|---|---|
+| `min_atk` / `max_atk` | `atk >= / <=` |
+| `min_def` / `max_def` | `def_ >= / <=` |
+| `level` | exact `level` |
+| `attribute` | exact `english_attribute` |
+| `card_type` | containment in `properties` (e.g. `"Dragon"`, `"Xyz"`) |
+
+Example: `card_type="Dragon", min_atk=2500` — only Dragon-type cards with
+ATK ≥ 2500 enter the ranking at all, instead of relying on the embedding to
+infer "dragon" and "strong" from a free-text query.
+
+**Hybrid vector + lexical fusion** — candidates are ranked by combining two
+independent signals via Reciprocal Rank Fusion (RRF):
+- pgvector cosine distance on `embedding` / `embedding_local`
+- pg_trgm lexical similarity of the query against `name`
+
+This means searching for an exact card name (e.g. `"Blue-Eyes White Dragon"`)
+reliably surfaces that card even when the embedding alone wouldn't rank it
+first.
+
+**Reranking** — the fused candidate pool is re-scored by a local cross-encoder
+(`BAAI/bge-reranker-v2-m3`, multilingual — queries arrive in any language,
+card text is in English) before truncating to the requested `limit`. Same
+lazy-load + CUDA→CPU fallback pattern as the local embedding model.
+
+**Indexes** (see `alembic/versions/`): HNSW (`vector_cosine_ops`) on
+`embedding` and `embedding_local`; GiST trigram on `name`; GIN on `properties`;
+B-tree on `atk`/`def_`/`level`/`english_attribute`.
+
+> Requires pgvector **≥ 0.8.0** for `hnsw.iterative_scan` (keeps HNSW recall
+> correct when combined with a structured filter). `docker-compose.yml` uses
+> `pgvector/pgvector:pg15`, which ships a current pgvector version.
+
+---
+
 ## MCP Server
 
-The MCP server exposes two tools as a **pure retrieval** interface — it returns
-raw card data, and the host AI (Pi, Claude Code) does its own reasoning.
+The MCP server exposes two tools as a **retrieval-only** interface — no LLM
+call happens server-side. It returns raw card data (already filtered, fused,
+and reranked per [Retrieval Pipeline](#retrieval-pipeline)), and the host AI
+(Pi, Claude Code) does its own reasoning over the results.
 
 | Tool | Description |
 |---|---|
-| `search_cards` | Semantic search via pgvector cosine similarity |
+| `search_cards` | Hybrid search (vector + lexical + rerank) with optional structured filters |
 | `get_card` | Retrieve a specific card by its JSON ID |
+
+`search_cards` takes `query`, `limit`, and the structured filters described in
+[Retrieval Pipeline](#retrieval-pipeline) (`min_atk`, `max_atk`, `min_def`,
+`max_def`, `level`, `attribute`, `card_type`). The host AI is expected to
+extract any numeric/categorical constraint from the user's natural language
+request and pass it via these params — the tool does not parse them out of
+`query` itself:
+
+```python
+search_cards(query="strong dragons", card_type="Dragon", min_atk=2500)
+```
 
 ```json
 // .mcp.json
@@ -153,6 +220,9 @@ docker compose exec cli uv run python -m app.ingest --json-dir ./jsons -v
 # Single query (non-interactive)
 docker compose exec cli uv run python -m app.search --query "spell cards that destroy monsters"
 
+# Single query with structured filters
+docker compose exec cli uv run python -m app.search --query "strong dragons" --card-type Dragon --min-atk 2500
+
 # Interactive mode (REPL)
 docker compose exec cli uv run python -m app.search
 
@@ -181,7 +251,8 @@ poc-rag/
 │   ├── models.py          # SQLAlchemy ORM (Card model, dual vectors)
 │   ├── ingest.py          # Ingestion pipeline (batch + dual embeddings)
 │   ├── search.py          # Interactive RAG search (CLI, OpenAI)
-│   ├── mcp_server.py      # MCP server (pure retrieval, local embeddings)
+│   ├── mcp_server.py      # MCP server (hybrid retrieval, local embeddings)
+│   ├── retrieval.py       # Shared retrieval core: filters, RRF fusion, reranking
 │   └── watcher.py         # File watcher for auto-reindexing
 ├── cards/                 # External card data (bind-mounted, read-only)
 ├── alembic/               # Database migrations
@@ -229,3 +300,14 @@ The MCP server always uses local embeddings regardless.
 | `content` | Text | Text representation for embedding |
 | `embedding` | Vector(1536) | OpenAI `text-embedding-3-small` embedding |
 | `embedding_local` | Vector(1024) | Local `mxbai-embed-large-v1` embedding |
+
+### Indexes
+
+| Index | Type | On | Purpose |
+|---|---|---|---|
+| `ix_cards_embedding_hnsw` | HNSW (`vector_cosine_ops`) | `embedding` | ANN search for OpenAI embeddings |
+| `ix_cards_embedding_local_hnsw` | HNSW (`vector_cosine_ops`) | `embedding_local` | ANN search for local embeddings |
+| `ix_cards_name_trgm` | GiST (`gist_trgm_ops`) | `name` | Lexical similarity ranking (RRF) |
+| `ix_cards_properties_gin` | GIN | `properties` | `card_type` containment filter |
+| `ix_cards_atk` / `ix_cards_def_` / `ix_cards_level` / `ix_cards_english_attribute` | B-tree | respective column | Structured filters |
+| `ix_cards_card_json_id` / `uq_cards_card_json_id` | B-tree (unique) | `card_json_id` | Idempotent upserts |
