@@ -1,0 +1,19 @@
+# Sobreposição opcional: reserva uma GPU NVIDIA para o serviço `cli`.
+#
+# Exige o nvidia-container-toolkit no host. Sem ele, o `up` falha com
+# "could not select device driver nvidia with capabilities: [[gpu]]" — que é
+# exatamente por que esta reserva não mora no compose base.
+#
+# Uso:  make run GPU=nvidia
+#   ou: docker compose -f docker-compose.yml -f docker-compose.nvidia.yml up -d
+#
+# Host sem GPU não precisa de nada: torch cai para CPU sozinho.
+services:
+  cli:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

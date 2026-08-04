@@ -25,13 +25,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    # Sem reserva de GPU aqui de propósito: `driver: nvidia` faz o `up` falhar em
+    # qualquer host sem o nvidia-container-toolkit. A reserva vive em
+    # docker-compose.nvidia.yml e entra por sobreposição — ver o Makefile.
 
 volumes:
   db_data:

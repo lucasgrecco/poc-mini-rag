@@ -47,31 +47,33 @@ def _get_openai_client() -> OpenAI:
 def _get_local_model() -> SentenceTransformer:
     """Return a lazily-initialized local SentenceTransformer model.
 
-    Requires CUDA. Raises RuntimeError if GPU is not available.
+    Uses the GPU when torch sees one and falls back to CPU otherwise, following the
+    same device selection as the reranker in `retrieval.py`. A missing GPU is slow,
+    not fatal: the machine without one still needs to run ingest and search.
+
+    `"cuda"` is also the right device string on a ROCm build of torch — HIP presents
+    itself through the CUDA API, so an AMD card needs no branch of its own here, only
+    the ROCm wheel at install time.
     """
     global _local_model
     if _local_model is None:
         import torch
-        if not torch.cuda.is_available():
-            raise RuntimeError(
-                "CUDA GPU is required for local embeddings. "
-                "No GPU detected."
-            )
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(
-            "Loading local embedding model: %s (device=cuda)",
+            "Loading local embedding model: %s (device=%s)",
             EMBEDDING_LOCAL_MODEL,
+            device,
         )
-        _local_model = SentenceTransformer(
-            EMBEDDING_LOCAL_MODEL, device="cuda"
-        )
+        _local_model = SentenceTransformer(EMBEDDING_LOCAL_MODEL, device=device)
         try:
             _local_model.encode("test")
         except RuntimeError:
-            logger.warning("CUDA OOM, falling back to CPU")
+            logger.warning("GPU unusable (%s), falling back to CPU", device)
+            device = "cpu"
             _local_model = SentenceTransformer(
-                EMBEDDING_LOCAL_MODEL, device="cpu"
+                EMBEDDING_LOCAL_MODEL, device=device
             )
-        logger.info("Local model loaded successfully on CUDA")
+        logger.info("Local model loaded successfully on %s", device)
     return _local_model
 
 

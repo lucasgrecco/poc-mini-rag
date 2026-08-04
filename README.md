@@ -46,12 +46,12 @@ Query: "dragons with more than 2500 ATK"
 | Language | Python 3.13 |
 | Database | PostgreSQL + pgvector |
 | OpenAI Embeddings | `text-embedding-3-small` (1536 dims) |
-| Local Embeddings | `mxbai-embed-large-v1` (1024 dims, GPU/CUDA) |
+| Local Embeddings | `mxbai-embed-large-v1` (1024 dims, GPU when present, else CPU) |
 | LLM | OpenAI `gpt-5.4-mini` |
-| Reranker | `BAAI/bge-reranker-v2-m3` (cross-encoder, GPU/CUDA) |
+| Reranker | `BAAI/bge-reranker-v2-m3` (cross-encoder, GPU when present, else CPU) |
 | MCP Server | FastMCP (stdio transport, hybrid retrieval) |
 | Observability | LangSmith tracing |
-| Infrastructure | Docker Compose (with NVIDIA GPU support) |
+| Infrastructure | Docker Compose (GPU is opt-in, via overlay file) |
 
 ---
 
@@ -69,9 +69,53 @@ The system stores **both** OpenAI and local embeddings in the same row:
 - **Ingestion**: always generates **both** embeddings in a single pass
 - **Switching providers**: instant — no re-ingestion needed
 
-The local model runs on **NVIDIA GPU (CUDA)**. The Docker container is configured
-with GPU access via `deploy.resources.reservations.devices`. CUDA is required
-for local embeddings — there is no CPU fallback.
+The local model uses the GPU when torch sees one and falls back to CPU otherwise —
+slower, never fatal. Same selection as the reranker.
+
+**GPU is opt-in**, via `GPU=` and a compose overlay. The base `docker-compose.yml`
+reserves no device, so it comes up on any host:
+
+```bash
+make run              # CPU — qualquer máquina
+make run GPU=nvidia   # NVIDIA (exige nvidia-container-toolkit no host)
+make run GPU=rocm     # AMD via ROCm
+make gpu-check        # o que o torch enxerga de dentro do container
+```
+
+Keeping the NVIDIA reservation in the base file made `up` fail outright on any
+machine without the toolkit — `could not select device driver "nvidia" with
+capabilities: [[gpu]]`, raised before a single container starts. That is why it
+lives in `docker-compose.nvidia.yml`.
+
+### AMD (ROCm)
+
+`GPU=rocm` passes `/dev/kfd` and `/dev/dri` into the container and reinstalls torch
+from the ROCm index on top of `uv sync`. Three things make this smaller than it
+looks:
+
+- **`device="cuda"` is correct on AMD.** ROCm exposes HIP through torch's CUDA API,
+  so `torch.cuda.is_available()` returns `True` on a Radeon. No branch in the
+  application code — `make gpu-check` should print `cuda True` with `hip` populated
+  and `cuda-build None`.
+- **No `HSA_OVERRIDE_GFX_VERSION`.** The RX 7900 XTX is Navi 31 / `gfx1100`, on
+  ROCm's official support list. That override exists for cards outside it; setting
+  it when it isn't needed masks real errors.
+- **No ROCm install on the host.** The PyTorch ROCm wheels bundle the ROCm runtime;
+  the host needs only the `amdgpu` kernel driver.
+
+The wheel index is pinned in the Makefile as `ROCM_INDEX` and must match the ROCm
+generation you are on — check <https://pytorch.org/get-started/locally/> and
+override if needed:
+
+```bash
+make run GPU=rocm ROCM_INDEX=https://download.pytorch.org/whl/rocm6.4
+```
+
+**Two cards are one card, as written.** `sentence-transformers` loads the model onto
+a single device, so a second GPU sits idle. Pin which one with `HIP_VISIBLE_DEVICES`
+in `docker-compose.rocm.yml`. Using both would mean
+`SentenceTransformer.start_multi_process_pool()` in the ingest path — worth it only
+if batch ingestion becomes the bottleneck.
 
 ---
 
@@ -108,7 +152,7 @@ first.
 **Reranking** — the fused candidate pool is re-scored by a local cross-encoder
 (`BAAI/bge-reranker-v2-m3`, multilingual — queries arrive in any language,
 card text is in English) before truncating to the requested `limit`. Same
-lazy-load + CUDA→CPU fallback pattern as the local embedding model.
+lazy-load + GPU→CPU fallback pattern as the local embedding model.
 
 **Indexes** (see `alembic/versions/`): HNSW (`vector_cosine_ops`) on
 `embedding` and `embedding_local`; GiST trigram on `name`; GIN on `properties`;
@@ -247,7 +291,7 @@ make watch
 poc-rag/
 ├── app/
 │   ├── config.py          # Centralized config (env vars, provider auto-detect)
-│   ├── embeddings.py      # Dual embedding provider (OpenAI + local CUDA)
+│   ├── embeddings.py      # Dual embedding provider (OpenAI + local GPU/CPU)
 │   ├── models.py          # SQLAlchemy ORM (Card model, dual vectors)
 │   ├── ingest.py          # Ingestion pipeline (batch + dual embeddings)
 │   ├── search.py          # Interactive RAG search (CLI, OpenAI)
@@ -256,7 +300,9 @@ poc-rag/
 │   └── watcher.py         # File watcher for auto-reindexing
 ├── cards/                 # External card data (bind-mounted, read-only)
 ├── alembic/               # Database migrations
-├── docker-compose.yml     # PostgreSQL + pgvector + GPU support
+├── docker-compose.yml     # PostgreSQL + pgvector (sem reserva de GPU)
+├── docker-compose.nvidia.yml  # Sobreposição opcional: reserva a GPU NVIDIA
+├── docker-compose.rocm.yml    # Sobreposição opcional: /dev/kfd + /dev/dri (AMD)
 ├── Dockerfile
 ├── .env.example           # Environment variables template
 ├── .mcp.json              # MCP server config for Claude Code / Pi

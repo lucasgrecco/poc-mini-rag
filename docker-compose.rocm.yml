@@ -1,0 +1,34 @@
+# Sobreposição opcional: entrega as GPUs AMD ao serviço `cli` via ROCm.
+#
+# Uso:  make run GPU=rocm
+#   ou: docker compose -f docker-compose.yml -f docker-compose.rocm.yml up -d
+#
+# Não há Dockerfile próprio: os wheels ROCm do PyTorch trazem o runtime ROCm dentro
+# deles. O host precisa só do driver amdgpu no kernel — instalação de ROCm no host
+# não é pré-requisito.
+#
+# `device="cuda"` continua sendo o device certo: a ROCm expõe HIP pela API CUDA do
+# torch, então `torch.cuda.is_available()` responde True numa Radeon e o código da
+# aplicação não tem ramo AMD.
+services:
+  cli:
+    devices:
+      # /dev/kfd é a interface de compute; /dev/dri expõe os nós das placas.
+      - /dev/kfd
+      - /dev/dri
+    group_add:
+      - video
+      - render
+    security_opt:
+      - seccomp:unconfined
+    # A ROCm usa memória compartilhada entre processos para transferências.
+    ipc: host
+    environment:
+      # As duas 7900 XTX são gfx1100, suporte oficial da ROCm — nada de
+      # HSA_OVERRIDE_GFX_VERSION aqui. Esse override existe para placa fora da
+      # lista de suporte, e setá-lo sem precisar mascara erro real.
+      #
+      # sentence-transformers carrega o modelo numa placa só. Descomente para
+      # escolher qual, ou para deixar uma das duas livre:
+      # - HIP_VISIBLE_DEVICES=0
+      - PYTORCH_HIP_ALLOC_CONF=expandable_segments:True
