@@ -1,0 +1,8 @@
+{
+  "id": 6834,
+  "type": "trap",
+  "name": "Power Wall",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "During damage calculation, when you would take battle damage from an opponent's attacking monster: Send 1 card from the top of your Deck to the GY for every 500 damage (round up) you would take, instead."
+}

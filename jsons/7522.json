@@ -1,0 +1,15 @@
+{
+  "id": 7522,
+  "type": "monster",
+  "name": "Evil Dragon Ananta",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Cannot be Normal Summoned/Set. Must be Special Summoned by banishing all Reptile monsters you control and in your GY. This card's ATK/DEF become the number of monsters banished for its Special Summon x 600. Once per turn, during your End Phase: Target 1 card on the field; destroy that target.",
+  "level": 8,
+  "atk": -1,
+  "def": -1,
+  "properties": [
+    "Reptile",
+    "Effect"
+  ]
+}

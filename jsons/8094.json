@@ -1,0 +1,15 @@
+{
+  "id": 8094,
+  "type": "monster",
+  "name": "Fabled Gallabas",
+  "englishAttribute": "light",
+  "localizedAttribute": "LIGHT",
+  "effectText": "You can discard 1 card to the GY, then target 1 monster your opponent controls with DEF less than or equal to this card's ATK; destroy that target.",
+  "level": 4,
+  "atk": 1500,
+  "def": 800,
+  "properties": [
+    "Fiend",
+    "Effect"
+  ]
+}

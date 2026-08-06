@@ -1,0 +1,15 @@
+{
+  "id": 6324,
+  "type": "monster",
+  "name": "Megarock Dragon",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Cannot be Normal Summoned/Set. Must be Special Summoned (from your hand) by banishing any number of Rock monster(s) from your GY. The original ATK/DEF of this card become the number of Rock monsters banished to Special Summon it x 700.",
+  "level": 7,
+  "atk": -1,
+  "def": -1,
+  "properties": [
+    "Rock",
+    "Effect"
+  ]
+}

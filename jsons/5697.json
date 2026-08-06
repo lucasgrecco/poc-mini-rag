@@ -1,0 +1,16 @@
+{
+  "id": 5697,
+  "type": "monster",
+  "name": "Shinato, King of a Higher Plane",
+  "englishAttribute": "light",
+  "localizedAttribute": "LIGHT",
+  "effectText": "You can Ritual Summon this card with \"Shinato's Ark\". You must also Tribute monsters from your hand or field whose total Levels equal 8 or more. If this card destroys an opponent's Defense Position monster by battle and sends it to the GY: Inflict damage to your opponent equal to the destroyed monster's original ATK.",
+  "level": 8,
+  "atk": 3300,
+  "def": 3000,
+  "properties": [
+    "Fairy",
+    "Ritual",
+    "Effect"
+  ]
+}

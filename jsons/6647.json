@@ -1,0 +1,15 @@
+{
+  "id": 6647,
+  "type": "monster",
+  "name": "Helios Duo Megistus",
+  "englishAttribute": "light",
+  "localizedAttribute": "LIGHT",
+  "effectText": "You can Special Summon this card (from your hand) by Tributing 1 \"Helios - The Primordial Sun\". This card's ATK/DEF become the number of banished monsters x 200. During the End Phase, if this card is in the GY because it was destroyed by battle and sent there this turn: You can Special Summon this card, and it gains 300 ATK/DEF.",
+  "level": 6,
+  "atk": -1,
+  "def": -1,
+  "properties": [
+    "Pyro",
+    "Effect"
+  ]
+}

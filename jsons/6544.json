@@ -1,0 +1,8 @@
+{
+  "id": 6544,
+  "type": "trap",
+  "name": "The Grave of Enkindling",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "When a monster you control is destroyed by battle and sent to the GY: Each player targets 1 monster in their GY; each player Special Summons their monster in Defense Position, but those monsters cannot change their battle positions."
+}

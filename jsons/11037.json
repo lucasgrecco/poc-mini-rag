@@ -1,0 +1,15 @@
+{
+  "id": 11037,
+  "type": "monster",
+  "name": "Battlin' Boxer Big Bandage",
+  "englishAttribute": "fire",
+  "localizedAttribute": "FIRE",
+  "effectText": "The first time this card would be destroyed by battle each turn, it is not destroyed. Once per turn: You can target 1 of your \"Battlin' Boxer\" monsters that is banished or in your GY, that has a Level; all \"Battlin' Boxer\" monsters you currently control become that monster's current Level.",
+  "level": 2,
+  "atk": 1100,
+  "def": 1400,
+  "properties": [
+    "Warrior",
+    "Effect"
+  ]
+}

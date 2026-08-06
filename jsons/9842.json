@@ -1,0 +1,15 @@
+{
+  "id": 9842,
+  "type": "monster",
+  "name": "Piercing Moray",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "Once per turn: You can Tribute 1 other Fish, Sea Serpent, or Aqua monster; this card gains 600 ATK. If this card attacks a Defense Position monster, inflict piercing battle damage.",
+  "level": 4,
+  "atk": 1500,
+  "def": 500,
+  "properties": [
+    "Fish",
+    "Effect"
+  ]
+}

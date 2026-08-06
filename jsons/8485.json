@@ -1,0 +1,8 @@
+{
+  "id": 8485,
+  "type": "spell",
+  "name": "Reptilianne Spawn",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Banish 1 \"Reptilianne\" monster from your GY; Special Summon 2 \"Reptilianne Tokens\" (Reptile/EARTH/Level 1/ATK 0/DEF 0)."
+}

@@ -1,0 +1,15 @@
+{
+  "id": 8725,
+  "type": "monster",
+  "name": "Secret Guards of the Ice Barrier",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "Your opponent cannot target \"Ice Barrier\" monsters you control with monster effects.",
+  "level": 2,
+  "atk": 100,
+  "def": 1600,
+  "properties": [
+    "Aqua",
+    "Effect"
+  ]
+}

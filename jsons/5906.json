@@ -1,0 +1,8 @@
+{
+  "id": 5906,
+  "type": "spell",
+  "name": "Dimension Fusion",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Pay 2000 LP; each player Special Summons as many of their banished monsters as possible."
+}

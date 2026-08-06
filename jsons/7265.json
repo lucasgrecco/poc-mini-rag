@@ -1,0 +1,15 @@
+{
+  "id": 7265,
+  "type": "monster",
+  "name": "Cloudian - Ghost Fog",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "Cannot be Special Summoned. Neither player takes battle damage from attacks involving this card. If this card is destroyed by battle: Distribute Fog Counters equal to the Level of the monster that destroyed it among face-up monsters.",
+  "level": 1,
+  "atk": 0,
+  "def": 0,
+  "properties": [
+    "Fiend",
+    "Effect"
+  ]
+}

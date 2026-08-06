@@ -1,0 +1,10 @@
+{
+  "id": 9686,
+  "type": "trap",
+  "name": "Oh F!sh!",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "When a monster effect is activated: Shuffle 1 of your banished Fish, Sea Serpent, or Aqua monsters into the Main Deck; negate the activation, and if you do, destroy that monster.",
+  "englishProperty": "counter",
+  "localizedProperty": "Counter"
+}

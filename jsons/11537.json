@@ -1,0 +1,15 @@
+{
+  "id": 11537,
+  "type": "monster",
+  "name": "Infernoid Seitsemas",
+  "englishAttribute": "fire",
+  "localizedAttribute": "FIRE",
+  "effectText": "Cannot be Normal Summoned/Set. Must be Special Summoned (from your hand or GY) by banishing 2 \"Infernoid\" monsters from your hand or GY while the total Levels and Ranks of all Effect Monsters you control are 8 or lower. At the end of the Battle Phase, if this card attacked an opponent's monster: You can banish 1 card on the field. Once per turn (Quick Effect): You can Tribute 1 monster, then target 1 card in your opponent's GY; banish it.",
+  "level": 7,
+  "atk": 2600,
+  "def": 0,
+  "properties": [
+    "Fiend",
+    "Effect"
+  ]
+}

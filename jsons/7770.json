@@ -1,0 +1,15 @@
+{
+  "id": 7770,
+  "type": "monster",
+  "name": "Dark Simorgh",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "While face-up on the field, this card is also WIND-Attribute. If this card is in your hand: You can banish 1 DARK and 1 WIND monster from your GY; Special Summon this card. If this card is in your GY: You can banish 1 DARK and 1 WIND monster from your hand; Special Summon this card. Your opponent cannot Set cards.",
+  "level": 7,
+  "atk": 2700,
+  "def": 1000,
+  "properties": [
+    "Winged Beast",
+    "Effect"
+  ]
+}

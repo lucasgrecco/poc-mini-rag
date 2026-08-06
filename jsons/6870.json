@@ -1,0 +1,15 @@
+{
+  "id": 6870,
+  "type": "monster",
+  "name": "Allure Queen LV3",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Once per turn: You can target 1 Level 3 or lower monster your opponent controls; equip that target to this card as an Equip Spell (max. 1). If this card would be destroyed by battle, destroy that equipped monster, instead. During your Standby Phase: You can send this card equipped with a monster by this card's effect to the GY; Special Summon 1 \"Allure Queen LV5\" from your hand or Deck.",
+  "level": 3,
+  "atk": 500,
+  "def": 500,
+  "properties": [
+    "Spellcaster",
+    "Effect"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": 7964,
+  "type": "monster",
+  "name": "Ally of Justice Thunder Armor",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Cannot be Special Summoned. If your \"Ally of Justice\" monster attacks a Defense Position monster, inflict piercing battle damage to your opponent.",
+  "level": 8,
+  "atk": 2700,
+  "def": 2200,
+  "properties": [
+    "Machine",
+    "Effect"
+  ]
+}

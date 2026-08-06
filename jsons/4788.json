@@ -1,0 +1,15 @@
+{
+  "id": 4788,
+  "type": "monster",
+  "name": "Total Defense Shogun",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "If this card is Normal or Flip Summoned: Change it to Defense Position. This card can attack while in face-up Defense Position. If it does, apply its ATK for damage calculation.",
+  "level": 6,
+  "atk": 1550,
+  "def": 2500,
+  "properties": [
+    "Warrior",
+    "Effect"
+  ]
+}

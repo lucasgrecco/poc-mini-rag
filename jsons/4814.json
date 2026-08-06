@@ -1,0 +1,8 @@
+{
+  "id": 4814,
+  "type": "spell",
+  "name": "Mesmeric Control",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Your opponent cannot change the battle positions of monsters during their next turn."
+}

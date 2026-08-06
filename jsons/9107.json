@@ -1,0 +1,16 @@
+{
+  "id": 9107,
+  "type": "monster",
+  "name": "Naturia Cherries",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "If this card is sent from your field to your GY by an opponent's card: You can Special Summon up to 2 \"Naturia Cherries\" from your Deck in face-down Defense Position.",
+  "level": 1,
+  "atk": 200,
+  "def": 200,
+  "properties": [
+    "Plant",
+    "Tuner",
+    "Effect"
+  ]
+}

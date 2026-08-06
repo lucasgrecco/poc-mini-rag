@@ -1,0 +1,16 @@
+{
+  "id": 5035,
+  "type": "monster",
+  "name": "Jowls of Dark Demise",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "FLIP: Target 1 monster your opponent controls; gain control of it (until the End Phase), and if you do, it can attack your opponent directly this turn.",
+  "level": 2,
+  "atk": 200,
+  "def": 100,
+  "properties": [
+    "Fiend",
+    "Flip",
+    "Effect"
+  ]
+}

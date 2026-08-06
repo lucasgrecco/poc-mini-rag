@@ -1,0 +1,15 @@
+{
+  "id": 6368,
+  "type": "monster",
+  "name": "Infernal Flame Emperor",
+  "englishAttribute": "fire",
+  "localizedAttribute": "FIRE",
+  "effectText": "Cannot be Special Summoned. When this card is Tribute Summoned: You can banish up to 5 FIRE monsters from your GY; destroy Spells/Traps on the field equal to the number banished to activate this effect.",
+  "level": 9,
+  "atk": 2700,
+  "def": 1600,
+  "properties": [
+    "Pyro",
+    "Effect"
+  ]
+}

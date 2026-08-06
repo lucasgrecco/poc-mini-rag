@@ -1,0 +1,15 @@
+{
+  "id": 8858,
+  "type": "monster",
+  "name": "Vampiric Koala",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "If this card inflicts battle damage to your opponent by battle with a monster: Gain LP equal to the battle damage inflicted.",
+  "level": 4,
+  "atk": 1800,
+  "def": 1500,
+  "properties": [
+    "Beast",
+    "Effect"
+  ]
+}

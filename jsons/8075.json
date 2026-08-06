@@ -1,0 +1,8 @@
+{
+  "id": 8075,
+  "type": "trap",
+  "name": "Planet Pollutant Virus",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "Tribute 1 \"Alien\" monster; destroy all face-up monsters your opponent controls without A-Counters, also until the end of your opponent's 3rd turn after this card resolves, place 1 A-Counter on each monster they Summon."
+}

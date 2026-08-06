@@ -1,0 +1,10 @@
+{
+  "id": 7053,
+  "type": "trap",
+  "name": "Aegis of Gaia",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "Gain 3000 LP. If this face-up card leaves the field, the controller of this card takes 3000 damage.",
+  "englishProperty": "continuous",
+  "localizedProperty": "Continuous"
+}

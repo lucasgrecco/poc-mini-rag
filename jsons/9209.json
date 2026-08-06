@@ -1,0 +1,10 @@
+{
+  "id": 9209,
+  "type": "spell",
+  "name": "Amazoness Heirloom",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Equip only to an \"Amazoness\" monster. The first time the equipped monster would be destroyed by battle each turn, it is not destroyed. After damage calculation, if the equipped monster attacked a monster: Destroy the attacked monster.",
+  "englishProperty": "equip",
+  "localizedProperty": "Equip"
+}

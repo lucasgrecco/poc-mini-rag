@@ -1,0 +1,15 @@
+{
+  "id": 10699,
+  "type": "monster",
+  "name": "Box of Friends",
+  "englishAttribute": "light",
+  "localizedAttribute": "LIGHT",
+  "effectText": "If this card is destroyed and sent to the GY: You can Special Summon 2 Normal Monsters with 0 ATK or DEF and different names from your Deck in Defense Position, but they cannot be used as Synchro Material, also they are destroyed during your next End Phase. You can only use this effect of \"Box of Friends\" once per turn.",
+  "level": 1,
+  "atk": 0,
+  "def": 0,
+  "properties": [
+    "Machine",
+    "Effect"
+  ]
+}

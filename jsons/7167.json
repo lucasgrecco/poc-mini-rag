@@ -1,0 +1,10 @@
+{
+  "id": 7167,
+  "type": "trap",
+  "name": "Damage = Reptile",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "Once per turn, when you take damage from a battle involving a Reptile monster: You can Special Summon 1 Reptile monster from your Deck with ATK less than or equal to the damage you took.",
+  "englishProperty": "continuous",
+  "localizedProperty": "Continuous"
+}

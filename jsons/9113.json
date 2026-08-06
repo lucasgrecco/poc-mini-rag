@@ -1,0 +1,15 @@
+{
+  "id": 9113,
+  "type": "monster",
+  "name": "Anarchist Monk Ranshin",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "If this card is sent from your field to your GY by an opponent's card: Target 1 monster in your opponent's GY; banish that target.",
+  "level": 4,
+  "atk": 1800,
+  "def": 100,
+  "properties": [
+    "Spellcaster",
+    "Effect"
+  ]
+}

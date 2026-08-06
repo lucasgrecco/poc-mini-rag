@@ -1,0 +1,15 @@
+{
+  "id": 6975,
+  "type": "monster",
+  "name": "Gren, Tactician of Dark World",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "If this card is discarded to the GY by card effect: Target 1 Spell/Trap on the field; destroy it.",
+  "level": 2,
+  "atk": 300,
+  "def": 500,
+  "properties": [
+    "Fiend",
+    "Effect"
+  ]
+}

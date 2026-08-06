@@ -1,0 +1,10 @@
+{
+  "id": 5606,
+  "type": "spell",
+  "name": "Autonomous Action Unit",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Pay 1500 LP, then target 1 monster in your opponent's GY; Special Summon it to your field in Attack Position, and equip it with this card. When this card leaves the field, destroy the equipped monster.",
+  "englishProperty": "equip",
+  "localizedProperty": "Equip"
+}

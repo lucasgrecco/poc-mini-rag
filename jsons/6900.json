@@ -1,0 +1,8 @@
+{
+  "id": 6900,
+  "type": "spell",
+  "name": "Ritual Foregone",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Pay 1000 Life Points. Special Summon 1 Ritual Monster from your hand. The Ritual Monster Special Summoned by this effect cannot attack, and is destroyed during the End Phase. Only 1 \"Ritual Foregone\" can be activated per turn."
+}

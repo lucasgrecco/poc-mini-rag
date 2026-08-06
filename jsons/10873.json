@@ -1,0 +1,15 @@
+{
+  "id": 10873,
+  "type": "monster",
+  "name": "Vampire Duke",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Cannot be used as material for an Xyz Summon, except for the Xyz Summon of a DARK monster. When this card is Normal Summoned: You can target 1 DARK \"Vampire\" monster in your GY; Special Summon that target in Defense Position. When this card is Special Summoned: You can declare 1 card type (Monster, Spell, or Trap); your opponent sends 1 card of that type from their Deck to the GY. You can only use this effect of \"Vampire Duke\" once per turn.",
+  "level": 5,
+  "atk": 2000,
+  "def": 0,
+  "properties": [
+    "Zombie",
+    "Effect"
+  ]
+}

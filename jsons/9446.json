@@ -1,0 +1,15 @@
+{
+  "id": 9446,
+  "type": "monster",
+  "name": "Sorciere de Fleur",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "If this card is Normal or Special Summoned: Target 1 monster in your opponent's GY; Special Summon it to your field, but it cannot attack your opponent directly, and is destroyed during the End Phase of this turn. You can only use this effect of \"Sorciere de Fleur\" once per turn.",
+  "level": 8,
+  "atk": 2900,
+  "def": 0,
+  "properties": [
+    "Spellcaster",
+    "Effect"
+  ]
+}

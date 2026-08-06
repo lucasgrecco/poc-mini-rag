@@ -1,0 +1,8 @@
+{
+  "id": 8686,
+  "type": "trap",
+  "name": "Alien Brain",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "If a Reptile monster you control is destroyed by battle with an opponent's attacking monster and sent to the GY: Take control of the opponent's monster, and if you do, it becomes a Reptile."
+}

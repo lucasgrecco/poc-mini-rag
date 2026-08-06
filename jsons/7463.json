@@ -1,0 +1,8 @@
+{
+  "id": 7463,
+  "type": "trap",
+  "name": "Rainbow Life",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "Discard 1 card; until the end of this turn, each time you would take damage, gain that amount of LP instead."
+}

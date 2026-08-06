@@ -1,0 +1,8 @@
+{
+  "id": 6818,
+  "type": "trap",
+  "name": "Survival Instinct",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "Banish any number of Dinosaur monsters from your GY; gain 400 LP for each Dinosaur monster banished to activate this card."
+}

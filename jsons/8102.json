@@ -1,0 +1,16 @@
+{
+  "id": 8102,
+  "type": "monster",
+  "name": "Naturia Rosewhip",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Your opponent can only activate 1 Spell/Trap Card each turn.",
+  "level": 3,
+  "atk": 400,
+  "def": 1700,
+  "properties": [
+    "Plant",
+    "Tuner",
+    "Effect"
+  ]
+}

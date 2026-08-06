@@ -1,0 +1,16 @@
+{
+  "id": 7824,
+  "type": "monster",
+  "name": "X-Saber Pashuul",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Cannot be destroyed by battle. Once per turn, during your opponent's Standby Phase: You take 1000 damage. This card must be in face-up Defense Position to activate and to resolve this effect.",
+  "level": 2,
+  "atk": 100,
+  "def": 0,
+  "properties": [
+    "Warrior",
+    "Tuner",
+    "Effect"
+  ]
+}

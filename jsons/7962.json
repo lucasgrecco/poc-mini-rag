@@ -1,0 +1,15 @@
+{
+  "id": 7962,
+  "type": "monster",
+  "name": "Ally of Justice Searcher",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Once per turn: You can discard 1 card, then target 1 face-down Defense Position monster your opponent controls; change that target to face-up Attack Position. (Flip monsters' effects are not activated.)",
+  "level": 3,
+  "atk": 1400,
+  "def": 100,
+  "properties": [
+    "Machine",
+    "Effect"
+  ]
+}

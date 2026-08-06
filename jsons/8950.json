@@ -1,0 +1,15 @@
+{
+  "id": 8950,
+  "type": "monster",
+  "name": "Scrap Chimera",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Cannot be used as Synchro Material, except for the Synchro Summon of a \"Scrap\" monster, and all other materials must be \"Scrap\" monsters. When this card is Normal Summoned: You can target 1 \"Scrap\" Tuner in your GY; Special Summon that target.",
+  "level": 4,
+  "atk": 1700,
+  "def": 500,
+  "properties": [
+    "Beast",
+    "Effect"
+  ]
+}

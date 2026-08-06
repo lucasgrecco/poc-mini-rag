@@ -1,0 +1,15 @@
+{
+  "id": 5366,
+  "type": "monster",
+  "name": "Agido",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "If this card is destroyed by battle and sent to the GY: Roll a six-sided die, then you can Special Summon 1 Fairy monster from your GY whose Level is equal to the result. (If the result is 6, you can Special Summon a Level 6 or higher monster.)",
+  "level": 4,
+  "atk": 1500,
+  "def": 1300,
+  "properties": [
+    "Fairy",
+    "Effect"
+  ]
+}

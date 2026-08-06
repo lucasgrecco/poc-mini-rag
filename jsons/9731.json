@@ -1,0 +1,15 @@
+{
+  "id": 9731,
+  "type": "monster",
+  "name": "Lightserpent",
+  "englishAttribute": "light",
+  "localizedAttribute": "LIGHT",
+  "effectText": "If this card is sent from the hand to the GY: You can Special Summon this card from your GY. Cannot be used as Synchro Material.",
+  "level": 3,
+  "atk": 1200,
+  "def": 800,
+  "properties": [
+    "Reptile",
+    "Effect"
+  ]
+}

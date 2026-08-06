@@ -1,0 +1,16 @@
+{
+  "id": 9844,
+  "type": "monster",
+  "name": "Pain Painter",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "This card's name becomes \"Plaguespreader Zombie\" while on the field. Once per turn: You can target up to 2 Zombie monsters you control, except this card; they become Level 2 (until the end of this turn), and if they do, they cannot be used as Synchro Material, except for the Synchro Summon of a Zombie monster.",
+  "level": 2,
+  "atk": 400,
+  "def": 200,
+  "properties": [
+    "Zombie",
+    "Tuner",
+    "Effect"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": 8684,
+  "type": "trap",
+  "name": "Saber Hole",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "When a monster(s) would be Summoned, while you control an \"X-Saber\" monster: Negate the Summon, and if you do, destroy that monster(s).",
+  "englishProperty": "counter",
+  "localizedProperty": "Counter"
+}

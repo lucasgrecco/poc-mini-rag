@@ -1,0 +1,16 @@
+{
+  "id": 8720,
+  "type": "monster",
+  "name": "Naturia Stinkbug",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "When a \"Naturia\" monster you control is targeted for an attack (Quick Effect): You can send this card from the field to the GY; negate that attack, then end the Battle Phase.",
+  "level": 3,
+  "atk": 200,
+  "def": 500,
+  "properties": [
+    "Insect",
+    "Tuner",
+    "Effect"
+  ]
+}

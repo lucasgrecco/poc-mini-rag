@@ -1,0 +1,15 @@
+{
+  "id": 8243,
+  "type": "monster",
+  "name": "Naturia Sunflower",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "When your opponent's monster effect is activated (Quick Effect): You can Tribute 1 \"Naturia\" monster and this card; negate the activation, and if you do, destroy that card.",
+  "level": 2,
+  "atk": 500,
+  "def": 0,
+  "properties": [
+    "Plant",
+    "Effect"
+  ]
+}

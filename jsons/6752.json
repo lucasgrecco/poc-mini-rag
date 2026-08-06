@@ -1,0 +1,15 @@
+{
+  "id": 6752,
+  "type": "monster",
+  "name": "Destiny HERO - Blade Master",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "During your opponent's Battle Phase (Quick Effect): You can discard this card; all \"Destiny HERO\" monsters you currently control gain 800 ATK until the end of this turn.",
+  "level": 3,
+  "atk": 300,
+  "def": 600,
+  "properties": [
+    "Warrior",
+    "Effect"
+  ]
+}

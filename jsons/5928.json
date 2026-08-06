@@ -1,0 +1,15 @@
+{
+  "id": 5928,
+  "type": "monster",
+  "name": "Bitelon",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "If this card attacks a Defense Position monster, inflict piercing battle damage to your opponent.",
+  "level": 6,
+  "atk": 2400,
+  "def": 1000,
+  "properties": [
+    "Reptile",
+    "Effect"
+  ]
+}

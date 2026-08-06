@@ -1,0 +1,16 @@
+{
+  "id": 10268,
+  "type": "monster",
+  "name": "Mermail Abyssgaios",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "2 Level 7 WATER monsters\nWhile this card has material, Level 5 or higher monsters cannot attack. Once per turn (Quick Effect): You can detach 1 material from this card; negate the effects of all face-up monsters your opponent currently controls with less ATK than this card, until the end of this turn.",
+  "rank": 7,
+  "atk": 2800,
+  "def": 1600,
+  "properties": [
+    "Aqua",
+    "Xyz",
+    "Effect"
+  ]
+}

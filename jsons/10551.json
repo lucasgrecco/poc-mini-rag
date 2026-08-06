@@ -1,0 +1,8 @@
+{
+  "id": 10551,
+  "type": "trap",
+  "name": "Memory Loss",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "When an effect of an Attack Position monster your opponent controls is activated: Negate that effect, and if you do, change that monster to face-up Defense Position."
+}

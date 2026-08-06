@@ -1,0 +1,15 @@
+{
+  "id": 4719,
+  "type": "monster",
+  "name": "Meteor Black Dragon",
+  "englishAttribute": "fire",
+  "localizedAttribute": "FIRE",
+  "effectText": "\"Red-Eyes Black Dragon\" + \"Meteor Dragon\"",
+  "level": 8,
+  "atk": 3500,
+  "def": 2000,
+  "properties": [
+    "Dragon",
+    "Fusion"
+  ]
+}

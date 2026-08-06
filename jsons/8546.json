@@ -1,0 +1,15 @@
+{
+  "id": 8546,
+  "type": "monster",
+  "name": "Genex Ally Duradark",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Once per turn: You can target 1 Attack Position monster your opponent controls with the same Attribute as this card; destroy that target. This card cannot attack the turn this effect is activated.",
+  "level": 4,
+  "atk": 1800,
+  "def": 200,
+  "properties": [
+    "Machine",
+    "Effect"
+  ]
+}

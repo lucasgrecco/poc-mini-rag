@@ -1,0 +1,15 @@
+{
+  "id": 8723,
+  "type": "monster",
+  "name": "Naturia White Oak",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "When your opponent activates a card or effect that targets this card (Quick Effect): You can send this card from the field to the GY; Special Summon 2 Level 4 or lower \"Naturia\" monsters from your Deck, but they cannot declare an attack, also destroy them during your End Phase.",
+  "level": 4,
+  "atk": 1800,
+  "def": 1400,
+  "properties": [
+    "Plant",
+    "Effect"
+  ]
+}

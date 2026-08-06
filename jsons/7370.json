@@ -1,0 +1,15 @@
+{
+  "id": 7370,
+  "type": "monster",
+  "name": "Imprisoned Queen Archfiend",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Once per turn, during your Standby Phase, you must pay 1000 LP (this is not optional), or this card is destroyed. Once per turn, during your Standby Phase: Target 1 Level 4 or lower Fiend monster on the field; that target gains 1000 ATK until the end of this turn. \"Pandemonium\" must be on the field and this card must be in your GY to activate and to resolve this effect.",
+  "level": 8,
+  "atk": 2600,
+  "def": 1700,
+  "properties": [
+    "Fiend",
+    "Effect"
+  ]
+}

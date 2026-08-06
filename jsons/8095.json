@@ -1,0 +1,16 @@
+{
+  "id": 8095,
+  "type": "monster",
+  "name": "Fabled Kushano",
+  "englishAttribute": "light",
+  "localizedAttribute": "LIGHT",
+  "effectText": "If this card is in your GY: You can discard 1 \"Fabled\" monster to the GY, except \"Fabled Kushano\"; add this card to your hand.",
+  "level": 3,
+  "atk": 1100,
+  "def": 800,
+  "properties": [
+    "Fiend",
+    "Tuner",
+    "Effect"
+  ]
+}

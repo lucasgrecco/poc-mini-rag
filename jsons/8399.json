@@ -1,0 +1,15 @@
+{
+  "id": 8399,
+  "type": "monster",
+  "name": "Naturia Horneedle",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "When your opponent Special Summons a monster(s) (Quick Effect): You can Tribute 1 other face-up \"Naturia\" monster you control; destroy that monster(s).",
+  "level": 4,
+  "atk": 1800,
+  "def": 100,
+  "properties": [
+    "Insect",
+    "Effect"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": 7091,
+  "type": "monster",
+  "name": "The Wicked Avatar",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Cannot be Special Summoned. Must be Normal Summoned/Set by Tributing 3 monsters. If this card is Normal Summoned: Your opponent cannot activate Spell/Trap Cards until the end of their 2nd turn after this effect's activation. This card's ATK/DEF are equal to the highest ATK on the field +100, except \"The Wicked Avatar\".",
+  "level": 10,
+  "atk": -1,
+  "def": -1,
+  "properties": [
+    "Fiend",
+    "Effect"
+  ]
+}

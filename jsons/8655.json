@@ -1,0 +1,16 @@
+{
+  "id": 8655,
+  "type": "monster",
+  "name": "XX-Saber Hyunlei",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "1 Tuner + 1+ non-Tuner \"X-Saber\" monsters\nWhen this card is Synchro Summoned: You can target up to 3 Spells/Traps on the field; destroy them.",
+  "level": 6,
+  "atk": 2300,
+  "def": 1300,
+  "properties": [
+    "Warrior",
+    "Synchro",
+    "Effect"
+  ]
+}

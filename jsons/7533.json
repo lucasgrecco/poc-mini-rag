@@ -1,0 +1,15 @@
+{
+  "id": 7533,
+  "type": "monster",
+  "name": "Flamvell Dragnov",
+  "englishAttribute": "fire",
+  "localizedAttribute": "FIRE",
+  "effectText": "If this card is destroyed by battle and sent to the GY: Inflict 500 damage to your opponent. You can banish this card from your GY and 1 face-up FIRE monster you control; add 1 \"Flamvell Dragnov\" from your Deck to your hand.",
+  "level": 2,
+  "atk": 1100,
+  "def": 200,
+  "properties": [
+    "Dragon",
+    "Effect"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": 10635,
+  "type": "monster",
+  "name": "Traptrix Atrax",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Unaffected by the effects of \"Hole\" Normal Traps. You can activate \"Hole\" Normal Trap Cards from your hand. The activation and effects of Normal Traps activated on your field cannot be negated.",
+  "level": 4,
+  "atk": 1800,
+  "def": 1000,
+  "properties": [
+    "Insect",
+    "Effect"
+  ]
+}

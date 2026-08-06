@@ -1,0 +1,15 @@
+{
+  "id": 5660,
+  "type": "monster",
+  "name": "Tribe-Infecting Virus",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "Discard 1 card, then declare 1 Monster Type; destroy all monsters on the field with the declared Type.",
+  "level": 4,
+  "atk": 1600,
+  "def": 1000,
+  "properties": [
+    "Aqua",
+    "Effect"
+  ]
+}

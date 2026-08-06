@@ -1,0 +1,8 @@
+{
+  "id": 7388,
+  "type": "trap",
+  "name": "Crystal Pair",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "When a \"Crystal Beast\" monster you control is destroyed by battle and sent to the GY: Place 1 \"Crystal Beast\" monster from your Deck face-up in your Spell & Trap Zone as a Continuous Spell, and if you do, you take no battle damage for the rest of this turn."
+}

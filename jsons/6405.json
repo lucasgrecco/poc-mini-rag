@@ -1,0 +1,15 @@
+{
+  "id": 6405,
+  "type": "monster",
+  "name": "The Wicked Dreadroot",
+  "englishAttribute": "dark",
+  "localizedAttribute": "DARK",
+  "effectText": "Cannot be Special Summoned. Must be Normal Summoned/Set by Tributing 3 monsters. The ATK/DEF of all other monsters on the field are halved.",
+  "level": 10,
+  "atk": 4000,
+  "def": 4000,
+  "properties": [
+    "Fiend",
+    "Effect"
+  ]
+}

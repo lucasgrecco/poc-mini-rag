@@ -1,0 +1,15 @@
+{
+  "id": 7721,
+  "type": "monster",
+  "name": "Destructotron",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "You can pay 1000 LP, then target 1 Set Spell/Trap your opponent controls; destroy that target. Once per turn, during the End Phase: Destroy this card. This card must be the only Psychic monster you control to activate and to resolve this effect.",
+  "level": 4,
+  "atk": 1600,
+  "def": 400,
+  "properties": [
+    "Psychic",
+    "Effect"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": 9349,
+  "type": "spell",
+  "name": "Foolish Return",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Target 1 card in your opponent's GY; shuffle it into the Deck.",
+  "englishProperty": "quickplay",
+  "localizedProperty": "Quick-Play"
+}

@@ -1,0 +1,15 @@
+{
+  "id": 7558,
+  "type": "monster",
+  "name": "Gaia Plate the Earth Giant",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Once per turn, during your Standby Phase, banish 1 Rock monster from your GY or send this card to the GY. You can Special Summon this card (from your hand) by banishing 2 Rock monsters from your GY. If this card battles an opponent's monster, that monster's ATK/DEF become halved during damage calculation only.",
+  "level": 8,
+  "atk": 2800,
+  "def": 1000,
+  "properties": [
+    "Rock",
+    "Effect"
+  ]
+}

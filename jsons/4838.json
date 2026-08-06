@@ -1,0 +1,8 @@
+{
+  "id": 4838,
+  "type": "spell",
+  "name": "Remove Trap",
+  "englishAttribute": "spell",
+  "localizedAttribute": "SPELL",
+  "effectText": "Target 1 face-up Trap on the field; destroy it."
+}

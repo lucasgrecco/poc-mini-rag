@@ -1,0 +1,15 @@
+{
+  "id": 11621,
+  "type": "monster",
+  "name": "Rush Warrior",
+  "englishAttribute": "wind",
+  "localizedAttribute": "WIND",
+  "effectText": "During damage calculation, if a \"Warrior\" Synchro Monster you control battles an opponent's monster (Quick Effect): You can send this card from your hand to the GY; your battling monster's ATK becomes double its current ATK during that damage calculation only. You can banish this card from your GY, then target 1 \"Synchron\" monster in your GY; add it to your hand. You can only use each effect of \"Rush Warrior\" once per turn.",
+  "level": 2,
+  "atk": 300,
+  "def": 1200,
+  "properties": [
+    "Warrior",
+    "Effect"
+  ]
+}

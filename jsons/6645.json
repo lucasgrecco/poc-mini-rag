@@ -1,0 +1,15 @@
+{
+  "id": 6645,
+  "type": "monster",
+  "name": "Golden Homunculus",
+  "englishAttribute": "light",
+  "localizedAttribute": "LIGHT",
+  "effectText": "Gains 300 ATK/DEF for each of your banished cards.",
+  "level": 6,
+  "atk": 1500,
+  "def": 1500,
+  "properties": [
+    "Warrior",
+    "Effect"
+  ]
+}

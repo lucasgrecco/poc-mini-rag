@@ -1,0 +1,15 @@
+{
+  "id": 8101,
+  "type": "monster",
+  "name": "Naturia Spiderfang",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Cannot declare an attack unless your opponent activated a card or effect this turn.",
+  "level": 4,
+  "atk": 2100,
+  "def": 400,
+  "properties": [
+    "Insect",
+    "Effect"
+  ]
+}

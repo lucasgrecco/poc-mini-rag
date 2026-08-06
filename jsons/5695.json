@@ -1,0 +1,15 @@
+{
+  "id": 5695,
+  "type": "monster",
+  "name": "Granadora",
+  "englishAttribute": "water",
+  "localizedAttribute": "WATER",
+  "effectText": "If this card is Summoned: Gain 1000 LP. If this card is destroyed and sent to the GY: You take 2000 damage.",
+  "level": 4,
+  "atk": 1900,
+  "def": 700,
+  "properties": [
+    "Reptile",
+    "Effect"
+  ]
+}

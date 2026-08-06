@@ -1,0 +1,8 @@
+{
+  "id": 7649,
+  "type": "trap",
+  "name": "Raging Cloudian",
+  "englishAttribute": "trap",
+  "localizedAttribute": "TRAP",
+  "effectText": "When a \"Cloudian\" monster(s) you control is destroyed by its own effect and sent to your GY: Target 1 of those monsters; Special Summon it in Attack Position, and if you do, place 1 Fog Counter on it, also it cannot be changed to Defense Position by card effects."
+}

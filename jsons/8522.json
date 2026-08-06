@@ -1,0 +1,16 @@
+{
+  "id": 8522,
+  "type": "monster",
+  "name": "XX-Saber Fulhelmknight",
+  "englishAttribute": "earth",
+  "localizedAttribute": "EARTH",
+  "effectText": "Once while face-up on the field, when an opponent's monster declares an attack: You can target the attacking monster; negate that attack. If this card destroys an opponent's Defense Position monster by battle: You can target 1 Level 4 or lower \"X-Saber\" monster in your GY; Special Summon it.",
+  "level": 3,
+  "atk": 1300,
+  "def": 1000,
+  "properties": [
+    "Warrior",
+    "Tuner",
+    "Effect"
+  ]
+}
