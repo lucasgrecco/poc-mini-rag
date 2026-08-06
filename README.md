@@ -140,6 +140,18 @@ Example: `card_type="Dragon", min_atk=2500` — only Dragon-type cards with
 ATK ≥ 2500 enter the ranking at all, instead of relying on the embedding to
 infer "dragon" and "strong" from a free-text query.
 
+> **ATK auto-extraction:** ATK expressions written inside the query text are
+> auto-extracted and enforced as the same structured `min_atk`/`max_atk`
+> filters — in EN and PT-BR. Thresholds ("more than 4000 ATK", "at least
+> 2500", "mais de 4000 de ataque", "pelo menos 2500"), less-than ("less
+> than 2500", "menos de 2500"), equality ("exactly 2500 ATK", "2500 ATK"),
+> ranges ("between 1000 and 2000", "entre 1000 e 2000", "1000-2000"),
+> operators (">= 2500", "<= 2500") and postfix forms ("2500+", "2500 or
+> less") are all recognized. Parsed bounds merge with explicit
+> `--min-atk`/`--max-atk` (effective min = the larger, effective max = the
+> smaller — AND semantics). Only ATK is auto-parsed; DEF, level, attribute
+> and card type remain explicit.
+
 **Hybrid vector + lexical fusion** — candidates are ranked by combining two
 independent signals via Reciprocal Rank Fusion (RRF):
 - pgvector cosine distance on `embedding` / `embedding_local`
@@ -178,13 +190,22 @@ and reranked per [Retrieval Pipeline](#retrieval-pipeline)), and the host AI
 
 `search_cards` takes `query`, `limit`, and the structured filters described in
 [Retrieval Pipeline](#retrieval-pipeline) (`min_atk`, `max_atk`, `min_def`,
-`max_def`, `level`, `attribute`, `card_type`). The host AI is expected to
-extract any numeric/categorical constraint from the user's natural language
-request and pass it via these params — the tool does not parse them out of
-`query` itself:
+`max_def`, `level`, `attribute`, `card_type`). ATK expressions inside the
+query text are auto-extracted and enforced (EN + PT-BR: thresholds,
+at-least, less-than, equality, ranges, ">= 2500", "2500+") and merge with
+explicit `min_atk`/`max_atk` (effective min = the larger, effective max =
+the smaller — AND semantics). Only ATK is auto-parsed; DEF, level,
+attribute and card type must still be extracted by the host AI and passed
+via their params:
 
 ```python
 search_cards(query="strong dragons", card_type="Dragon", min_atk=2500)
+```
+
+ATK-only example (no explicit params needed):
+
+```python
+search_cards(query="dragons with more than 4000 ATK")  # enforces atk >= 4000
 ```
 
 ```json

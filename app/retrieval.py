@@ -114,6 +114,33 @@ def _build_params(
     rrf_k: int,
     filter_params: dict,
 ) -> dict:
+    """Build the bind-parameter dict for ``_hybrid_search_sql``.
+
+    The ``query_vector`` is a list of floats, but the SQL binds it via
+    ``CAST(:vector AS vector)`` which expects the pgvector literal string
+    format ``[v1,v2,...]``. This function serializes the vector into that
+    string form so pgvector can parse it on the server side.
+
+    The ``filter_params`` produced by ``build_filter_clause`` are merged into
+    the returned dict via ``**filter_params`` so the filter bind parameters are
+    available alongside the vector, query text, pool size, and RRF constant.
+
+    Args:
+        query_text: The natural-language query string for lexical search.
+        query_vector: Embedding vector (list of floats) to be serialized into
+            the pgvector ``[v1,v2,...]`` string format for ``CAST(:vector AS
+            vector)``.
+        candidate_pool_size: Row limit for the candidate pool pulled by the
+            RRF query.
+        rrf_k: RRF constant used in the reciprocal-rank-fusion scoring.
+        filter_params: Bind parameters produced by ``build_filter_clause``;
+            merged into the result via ``**filter_params``.
+
+    Returns:
+        A dict of bind parameters (vector string, query_text,
+        candidate_pool_size, rrf_k, and all filter_params entries) suitable
+        for ``_hybrid_search_sql``.
+    """
     vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
     return {
         "vector": vector_str,

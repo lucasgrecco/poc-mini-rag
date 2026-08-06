@@ -22,6 +22,7 @@ from app.config import (
     CANDIDATE_POOL_SIZE,
 )
 from app.embeddings import get_embedding
+from app.query_parser import prepare_search_query
 from app.retrieval import hybrid_search_sync, rerank
 
 EMBEDDING_COLUMN = "embedding" if EMBEDDING_PROVIDER == "openai" else "embedding_local"
@@ -94,10 +95,11 @@ def search_card(
 ) -> None:
     """Execute a single hybrid search query (vector + lexical + rerank).
 
-    `query` alone is semantic-only and won't reliably enforce numeric or
-    categorical constraints — pass those via the structured filter args
-    (e.g. card_type="Dragon", min_atk=2500) instead of relying on the
-    embedding to capture them.
+    ATK phrases written in the query text (e.g. "more than 4000 ATK",
+    "entre 1000 e 2000", ">= 2500", "2500+") are auto-extracted and enforced
+    as structured min_atk/max_atk filters, merged with any explicit bounds
+    (effective min = max, effective max = min). Only ATK is parsed; DEF,
+    level, attribute and card_type must still be passed explicitly.
 
     Args:
         query: The user's natural language search query.
@@ -109,13 +111,21 @@ def search_card(
         attribute: Exact attribute (e.g. "light", "dark", "wind").
         card_type: A value that must appear in the card's properties/type list.
     """
+    search_query, eff_min_atk, eff_max_atk = prepare_search_query(query, min_atk, max_atk)
+    logger.info(
+        "Parsed ATK bounds from query: eff_min_atk=%s eff_max_atk=%s (remainder=%r)",
+        eff_min_atk,
+        eff_max_atk,
+        search_query,
+    )
+
     logger.info("Generating query embedding...")
-    query_vector = get_embedding(query)
+    query_vector = get_embedding(search_query)
 
     logger.info("Searching database with hybrid vector+lexical retrieval...")
     filters = {
-        "min_atk": min_atk,
-        "max_atk": max_atk,
+        "min_atk": eff_min_atk,
+        "max_atk": eff_max_atk,
         "min_def": min_def,
         "max_def": max_def,
         "level": level,
@@ -127,13 +137,13 @@ def search_card(
     with engine.connect() as conn:
         candidates = hybrid_search_sync(
             conn,
-            query,
+            search_query,
             query_vector,
             EMBEDDING_COLUMN,
             filters=filters,
             candidate_pool_size=candidate_pool_size,
         )
-        results = rerank(query, candidates, SEARCH_LIMIT)
+        results = rerank(search_query, candidates, SEARCH_LIMIT)
         model_answer = get_model_answer(query, results)
 
     print(f"\n🏆 Top {len(results)} Results:\n")

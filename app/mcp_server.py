@@ -22,6 +22,7 @@ from app.config import (
     SEARCH_LIMIT,
     CANDIDATE_POOL_SIZE,
 )
+from app.query_parser import prepare_search_query
 from app.retrieval import hybrid_search_async, rerank
 
 # MCP always uses local embeddings — no API key needed, pure retrieval
@@ -90,15 +91,20 @@ async def search_cards(
     data — the host AI (Pi, Claude Code) does its own reasoning on the
     results.
 
-    IMPORTANT: `query` alone is semantic-only and will NOT reliably enforce
-    numeric or categorical constraints (e.g. "ATK above 2500", "Dragon-type",
-    "Level 8") — embeddings capture meaning, not exact thresholds. Extract
-    any such constraint from the user's request yourself and pass it via the
-    structured parameters below; only put the free-text/descriptive part in
-    `query`.
+    IMPORTANT: ATK constraints written in the query text ARE now detected
+    and enforced automatically — no need to extract them yourself. Examples:
+    "more than 2500 ATK", "2500+", ">= 2500", "between 1000 and 2000",
+    "exactly 2500 ATK" (PT-BR equivalents like "mais de 2500 de ataque" and
+    "entre 1000 e 2000" work too). The explicit min_atk/max_atk parameters
+    are still accepted and merge (tighten) with the parsed bounds: effective
+    min = max of the two, effective max = min of the two.
+
+    DEF, level, attribute and card_type are still NOT parsed from the query
+    text — pass them explicitly (e.g. card_type="Dragon", level=8).
 
     Example: user asks "dragões fortes com mais de 2500 de ataque" ->
-        search_cards(query="dragões fortes", card_type="Dragon", min_atk=2500)
+        search_cards(query="dragões fortes com mais de 2500 de ataque", card_type="Dragon")
+        (ATK >= 2500 is enforced automatically)
     Example: user asks for a specific card by name ->
         search_cards(query="Blue-Eyes White Dragon")  # lexical fusion ranks
         the exact name match to the top even if the embedding alone wouldn't.
@@ -121,20 +127,28 @@ async def search_cards(
     limit = max(1, min(limit, 50))
     candidate_pool_size = max(CANDIDATE_POOL_SIZE, limit * 2)
 
+    search_query, eff_min_atk, eff_max_atk = prepare_search_query(query, min_atk, max_atk)
+    logger.info(
+        "Parsed ATK bounds from query: eff_min_atk=%s eff_max_atk=%s (remainder=%r)",
+        eff_min_atk,
+        eff_max_atk,
+        search_query,
+    )
+
     await ctx.info(f"Searching cards for: {query}")
 
     # Generate query embedding (blocking call → run in thread)
     from app.embeddings import get_local_embedding  # Lazy import: avoids 4s sentence-transformers load at startup
     try:
-        query_vector = await asyncio.to_thread(get_local_embedding, query)
+        query_vector = await asyncio.to_thread(get_local_embedding, search_query)
     except Exception as e:
         return f"Failed to generate embedding: {e}"
 
     # Hybrid vector + lexical candidate retrieval, then rerank
     server_ctx = ctx.request_context.lifespan_context
     filters = {
-        "min_atk": min_atk,
-        "max_atk": max_atk,
+        "min_atk": eff_min_atk,
+        "max_atk": eff_max_atk,
         "min_def": min_def,
         "max_def": max_def,
         "level": level,
@@ -145,7 +159,7 @@ async def search_cards(
         async with server_ctx.session_factory() as session:
             candidates = await hybrid_search_async(
                 session,
-                query,
+                search_query,
                 query_vector,
                 EMBEDDING_COLUMN,
                 filters=filters,
@@ -157,7 +171,7 @@ async def search_cards(
     if not candidates:
         return "No cards found matching your query."
 
-    rows = await asyncio.to_thread(rerank, query, candidates, limit)
+    rows = await asyncio.to_thread(rerank, search_query, candidates, limit)
 
     # Return raw results — host AI does its own reasoning
     lines = [f"Top {len(rows)} results for: {query}", ""]
