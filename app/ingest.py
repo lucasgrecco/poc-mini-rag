@@ -155,73 +155,114 @@ def upsert_card(card_json: dict, session: Session) -> None:
     upsert_card_with_vectors(card_json, openai_vec, local_vec, session)
 
 
-def process_jsons(json_dir: str, session: Session) -> int:
-    """Ingest all JSON card files from the given directory using batch embeddings.
+def process_jsons(json_dir: str, session: Session, force: bool = False) -> int:
+    """Ingest JSON card files from the given directory using batch embeddings.
 
     Cards are processed in batches of BATCH_SIZE to minimize OpenAI API calls.
-    If a batch embedding call fails, falls back to individual processing.
+    Each batch is committed as a unit: any failure (embedding, upsert, or
+    commit) rolls the batch back and processing continues with the next batch.
+    If a batch embedding call fails, falls back to individual processing
+    (which also commits once per batch).
+
+    Unless ``force`` is set, files whose ``id`` already exists in the cards
+    table are skipped — the cards table is the resume record.
 
     Args:
         json_dir: Path to the directory containing ``.json`` card files.
         session: An active SQLAlchemy session.
+        force: Re-embed and re-upsert all files, bypassing the resume skip.
 
     Returns:
-        The number of cards ingested.
+        The number of cards newly ingested this run.
     """
     json_path = Path(json_dir)
-    json_files = list(json_path.glob("*.json"))
+    json_files = sorted(json_path.glob("*.json"))
 
     if not json_files:
         logger.warning("No JSON files found in %s", json_dir)
         return 0
 
-    count = 0
-    total = len(json_files)
-
-    # Process in batches
-    for i in tqdm(range(0, total, BATCH_SIZE), desc="Ingesting cards", unit="batch"):
-        batch_files = json_files[i:i + BATCH_SIZE]
-        batch_cards: list[dict] = []
-        batch_texts: list[str] = []
-
-        # Read all JSONs in this batch
-        for json_file in batch_files:
+    # Phase 1: resume filter — skip files already present in the cards table.
+    skipped = 0
+    if force:
+        pending_files = json_files
+    else:
+        existing_ids = set(session.scalars(select(Card.card_json_id)))
+        pending_files = []
+        for json_file in json_files:
             with open(json_file, "r", encoding="utf-8") as f:
                 card_json = json.load(f)
-            content = build_card_content(card_json)
-            batch_cards.append(card_json)
-            batch_texts.append(content)
+            if card_json.get("id") in existing_ids:
+                skipped += 1
+            else:
+                pending_files.append(json_file)
 
-        # Single API call for the whole batch (both providers)
-        try:
-            openai_vecs, local_vecs = get_both_embeddings_batch(batch_texts)
-        except Exception:
-            logger.exception(
-                "Batch embedding failed for batch %d, falling back to individual",
-                i // BATCH_SIZE,
-            )
-            # Fallback: process one by one
-            for card_json in batch_cards:
-                try:
-                    upsert_card(card_json, session)
-                    count += 1
-                except Exception:
-                    logger.exception("Failed: %s", card_json.get("name"))
-            continue
+    if not pending_files:
+        logger.info(
+            "Ingestion summary: %d files skipped (already in cards), %d ingested this run",
+            skipped,
+            0,
+        )
+        return 0
 
-        # Upsert each card with both embeddings
-        for j, card_json in enumerate(batch_cards):
+    # Phase 2: batch loop — one commit per batch, rollback on any failure.
+    count = 0
+    total = len(pending_files)
+
+    with tqdm(total=total, desc="Ingesting cards", unit="file") as progress:
+        for i in range(0, total, BATCH_SIZE):
+            batch_files = pending_files[i:i + BATCH_SIZE]
+            batch_cards: list[dict] = []
+            batch_texts: list[str] = []
+
+            # Read all JSONs in this batch
+            for json_file in batch_files:
+                with open(json_file, "r", encoding="utf-8") as f:
+                    card_json = json.load(f)
+                content = build_card_content(card_json)
+                batch_cards.append(card_json)
+                batch_texts.append(content)
+
             try:
-                openai_vec = openai_vecs[j] if openai_vecs else None
-                local_vec = local_vecs[j] if local_vecs else None
-                upsert_card_with_vectors(
-                    card_json, openai_vec, local_vec, session
-                )
-                count += 1
+                # Single API call for the whole batch (both providers)
+                try:
+                    openai_vecs, local_vecs = get_both_embeddings_batch(batch_texts)
+                except Exception:
+                    logger.exception(
+                        "Batch embedding failed for batch %d, falling back to individual",
+                        i // BATCH_SIZE,
+                    )
+                    # Fallback: process one by one
+                    batch_count = 0
+                    for card_json in batch_cards:
+                        try:
+                            upsert_card(card_json, session)
+                            batch_count += 1
+                        except Exception:
+                            logger.exception("Failed: %s", card_json.get("name"))
+                    session.commit()
+                    count += batch_count
+                else:
+                    # Upsert each card with both embeddings
+                    for j, card_json in enumerate(batch_cards):
+                        openai_vec = openai_vecs[j] if openai_vecs else None
+                        local_vec = local_vecs[j] if local_vecs else None
+                        upsert_card_with_vectors(
+                            card_json, openai_vec, local_vec, session
+                        )
+                    session.commit()
+                    count += len(batch_cards)
             except Exception:
-                logger.exception("Failed: %s", card_json.get("name"))
+                session.rollback()
+                logger.exception("Batch %d failed, rolling back", i // BATCH_SIZE)
+            progress.update(len(batch_files))
 
-    session.commit()
+    # Phase 3: summary log
+    logger.info(
+        "Ingestion summary: %d files skipped (already in cards), %d ingested this run",
+        skipped,
+        count,
+    )
     return count
 
 
@@ -246,6 +287,11 @@ def main() -> None:
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-embed and re-upsert all files, bypassing the resume skip",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -260,10 +306,10 @@ def main() -> None:
     session_factory = sessionmaker(bind=engine)
 
     with session_factory() as session:
-        count = process_jsons(args.json_dir, session)
+        count = process_jsons(args.json_dir, session, force=args.force)
+        show_stats(session)
 
     logger.info("Ingestion complete! %d cards ingested.", count)
-    show_stats(session_factory())
 
 
 if __name__ == "__main__":
