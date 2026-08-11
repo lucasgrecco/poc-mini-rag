@@ -245,7 +245,7 @@ docker compose exec cli uv run python -m app.ingest  # Ingest cards
 docker compose exec cli uv run python -m app.search  # Launch search
 ```
 
-> Requires an OpenAI API key for CLI search. Copy `.env.example` to `.env` and
+> An OpenAI API key is optional for CLI search (without one it uses local embeddings and omits the AI answer). Copy `.env.example` to `.env` and
 > fill in the values (or let `make demo` prompt you for them).
 > The MCP server works without any API key (uses local embeddings).
 
@@ -337,7 +337,7 @@ poc-rag/
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | CLI search | OpenAI API key for embeddings and chat. Not needed for MCP. |
+| `OPENAI_API_KEY` | Optional | OpenAI API key for CLI chat + embeddings. Without it, CLI search runs keyless (local embeddings, no AI answer). Not needed for MCP. |
 | `CARD_JSON_DIR` | No | Path to card JSON directory (default: `jsons`) |
 | `LANGSMITH_TRACING` | No | Enable LangSmith tracing (`true`/`false`) |
 | `LANGSMITH_ENDPOINT` | No | LangSmith API endpoint |
@@ -347,7 +347,7 @@ poc-rag/
 Copy `.env.example` to `.env` and fill in the values. `.env` is git-ignored and never committed.
 
 **Provider auto-detection:** when `OPENAI_API_KEY` is set, the CLI uses OpenAI
-embeddings (1536 dims). When unset, it falls back to local embeddings (1024 dims).
+embeddings (1536 dims). When unset, it falls back to local embeddings (1024 dims) and skips the AI answer.
 The MCP server always uses local embeddings regardless.
 
 ---

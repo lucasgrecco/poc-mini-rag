@@ -61,11 +61,11 @@ setup_env() {
   fi
 
   echo ""
-  read -r -p "  OpenAI API key (required): " openai_key
+  read -r -p "  OpenAI API key (optional; empty = keyless local mode): " openai_key
   echo ""
 
   if [[ -z "$openai_key" ]]; then
-    warn "No API key provided. Search will not work until one is added to .env"
+    warn "No API key provided. Search will run keyless (local embeddings, no AI answer)."
   fi
 
   read -r -p "  Enable LangSmith tracing? [y/N]: " enable_ls

@@ -30,7 +30,15 @@ EMBEDDING_COLUMN = "embedding" if EMBEDDING_PROVIDER == "openai" else "embedding
 logger = logging.getLogger(__name__)
 
 engine = create_engine(DATABASE_URL)
-_client = wrap_openai(OpenAI())
+_client: OpenAI | None = None
+
+
+def _get_chat_client() -> OpenAI:
+    """Return a lazily-initialized OpenAI chat client singleton."""
+    global _client
+    if _client is None:
+        _client = wrap_openai(OpenAI())
+    return _client
 
 
 @retry(
@@ -70,7 +78,7 @@ CARDS FOUND:
 
     logger.debug("=== PROMPT SENT TO MODEL ===\n%s\n=== END PROMPT ===", prompt)
 
-    response = _client.chat.completions.create(
+    response = _get_chat_client().chat.completions.create(
         model=CHAT_MODEL,
         messages=[
             {"role": "system", "content": prompt},
@@ -144,7 +152,11 @@ def search_card(
             candidate_pool_size=candidate_pool_size,
         )
         results = rerank(search_query, candidates, SEARCH_LIMIT)
-        model_answer = get_model_answer(query, results)
+        model_answer = (
+            get_model_answer(query, results)
+            if EMBEDDING_PROVIDER == "openai"
+            else None
+        )
 
     print(f"\n🏆 Top {len(results)} Results:\n")
     for i, row in enumerate(results, 1):
@@ -152,7 +164,8 @@ def search_card(
         print(f"   {row['content']}")
         print("-" * 60)
 
-    print(f"\n💡 AI Answer:\n{model_answer}\n")
+    if model_answer is not None:
+        print(f"\n💡 AI Answer:\n{model_answer}\n")
 
 
 def interactive_loop() -> None:
