@@ -83,15 +83,21 @@ class CardFileHandler(FileSystemEventHandler):
         self._handle_change(event.src_path)
 
     def on_moved(self, event: object) -> None:
-        """Handle file renames and moves between directories."""
+        """Handle file renames and moves between directories.
+
+        With a recursive watch, in-tree moves arrive as FileMovedEvent:
+        - dest is a processable .json: the file is still in the tree, so
+          upsert the destination only (never delete by the source stem).
+        - dest is NOT a processable .json but src was (e.g. a rename to a
+          non-JSON name): the file effectively left the tree, so delete by
+          the source stem.
+        """
         if event.is_directory:
             return
-        # File moved into the watched directory: treat as created
         if self._should_process(event.dest_path):
             if self._debounce(event.dest_path, "created"):
                 self._handle_change(event.dest_path)
-        # File moved out of the watched directory: treat as deleted
-        if self._should_process(event.src_path):
+        elif self._should_process(event.src_path):
             if self._debounce(event.src_path, "deleted"):
                 self._handle_delete(event.src_path)
 
@@ -196,7 +202,7 @@ def main() -> None:
     observer_cls = PollingObserver if args.polling else Observer
     observer = observer_cls()
     handler = CardFileHandler(session_factory)
-    observer.schedule(handler, str(json_dir), recursive=False)
+    observer.schedule(handler, str(json_dir), recursive=True)
 
     def shutdown(signum: int, frame: object) -> None:
         logger.info("Shutting down watcher (signal %d)...", signum)
