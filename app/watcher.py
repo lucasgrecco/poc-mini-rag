@@ -103,11 +103,10 @@ class CardFileHandler(FileSystemEventHandler):
     def _handle_change(self, file_path: str) -> None:
         """Read JSON file, generate embedding, and upsert into the database."""
         path = Path(file_path)
-        if path.stat().st_size > self._max_file_size:
-            logger.warning("Skipping large file: %s", file_path)
-            return
-
         try:
+            if path.stat().st_size > self._max_file_size:
+                logger.warning("Skipping large file: %s", file_path)
+                return
             with open(file_path, "r", encoding="utf-8") as f:
                 card_json = json.load(f)
         except (json.JSONDecodeError, OSError) as e:
