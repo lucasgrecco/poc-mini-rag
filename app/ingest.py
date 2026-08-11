@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from tqdm import tqdm
 
 from app.config import DATABASE_URL, DEFAULT_JSON_DIR
-from app.embeddings import get_embedding, get_both_embeddings, get_both_embeddings_batch
+from app.embeddings import get_both_embeddings, get_both_embeddings_batch
 from app.models import Base, Card
 
 logger = logging.getLogger(__name__)
@@ -112,29 +112,6 @@ def upsert_card_with_vectors(
         set_=values,
     )
     session.execute(stmt)
-
-
-def upsert_card_with_vector(
-    card_json: dict, vector: list[float], session: Session
-) -> None:
-    """Upsert a single card with a pre-computed embedding vector. Does NOT commit.
-
-    Uses the auto-detected provider to decide which column to populate.
-
-    Args:
-        card_json: Raw card data from a JSON file.
-        vector: Pre-computed embedding vector.
-        session: An active SQLAlchemy session.
-
-    Raises:
-        ValueError: If card_json has no 'id' field.
-    """
-    from app.config import EMBEDDING_PROVIDER
-
-    if EMBEDDING_PROVIDER == "openai":
-        upsert_card_with_vectors(card_json, vector, None, session)
-    else:
-        upsert_card_with_vectors(card_json, None, vector, session)
 
 
 def upsert_card(card_json: dict, session: Session) -> None:
