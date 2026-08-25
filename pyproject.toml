@@ -21,6 +21,12 @@ dependencies = [
 [project.scripts]
 ygo-search = "app.mcp_server:main"
 
+# uv syncs the `dev` group by default, so `make run` installs the test runner too.
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
 [tool.uv]
 package = true
 
