@@ -83,17 +83,37 @@ class CardFileHandler(FileSystemEventHandler):
         self._handle_change(event.src_path)
 
     def on_moved(self, event: object) -> None:
-        """Handle file renames and moves between directories."""
+        """Handle file renames and moves between directories.
+
+        Policy: only a real deletion removes a card from the database, which is
+        why this method never calls ``_handle_delete``.
+
+        A file moved INTO the watched directory is upserted, exactly like a
+        created file. A file moved OUT of the watched directory is ignored and
+        its row is kept. The observer runs with ``recursive=False``, so
+        reorganizing the directory -- archiving a batch, moving cards into a
+        subfolder, mass renaming -- looks identical to a move out; deleting on
+        that signal would silently drop those cards from the search index on an
+        ordinary file operation. Removing a card from the index is therefore
+        reserved for ``on_deleted``.
+
+        Consequence, accepted deliberately: renaming ``4007.json`` to
+        ``4008.json`` in place upserts 4008 and leaves the 4007 row untouched.
+        """
         if event.is_directory:
             return
         # File moved into the watched directory: treat as created
         if self._should_process(event.dest_path):
             if self._debounce(event.dest_path, "created"):
                 self._handle_change(event.dest_path)
-        # File moved out of the watched directory: treat as deleted
+        # File moved out of the watched directory: deliberately NOT a delete.
+        # Logged so the retained row is observable instead of silent.
         if self._should_process(event.src_path):
-            if self._debounce(event.src_path, "deleted"):
-                self._handle_delete(event.src_path)
+            logger.info(
+                "Ignoring move out of the watched directory, card kept in the "
+                "index: %s",
+                event.src_path,
+            )
 
     def on_deleted(self, event: object) -> None:
         if event.is_directory or not self._should_process(event.src_path):
@@ -103,13 +123,17 @@ class CardFileHandler(FileSystemEventHandler):
     def _handle_change(self, file_path: str) -> None:
         """Read JSON file, generate embedding, and upsert into the database."""
         path = Path(file_path)
-        if path.stat().st_size > self._max_file_size:
-            logger.warning("Skipping large file: %s", file_path)
-            return
-
         try:
+            if path.stat().st_size > self._max_file_size:
+                logger.warning("Skipping large file: %s", file_path)
+                return
+
             with open(file_path, "r", encoding="utf-8") as f:
                 card_json = json.load(f)
+        except FileNotFoundError:
+            # Normal race: the file was removed between the event and the read.
+            logger.debug("File vanished before it was read: %s", file_path)
+            return
         except (json.JSONDecodeError, OSError) as e:
             logger.error("Failed to read %s: %s", file_path, e)
             return

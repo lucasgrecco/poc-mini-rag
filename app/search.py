@@ -20,6 +20,7 @@ from app.config import (
     SEARCH_LIMIT,
     EMBEDDING_PROVIDER,
     CANDIDATE_POOL_SIZE,
+    OPENAI_API_KEY,
 )
 from app.embeddings import get_embedding
 from app.query_parser import prepare_search_query
@@ -30,7 +31,30 @@ EMBEDDING_COLUMN = "embedding" if EMBEDDING_PROVIDER == "openai" else "embedding
 logger = logging.getLogger(__name__)
 
 engine = create_engine(DATABASE_URL)
-_client = wrap_openai(OpenAI())
+
+# OpenAI client (lazy init). Built on first use rather than at import time:
+# `OpenAI()` raises when no credentials are present, which would break
+# `import app.search` in exactly the no-key case local embeddings exist for.
+# Same pattern as `_get_openai_client` in app/embeddings.py and `_get_reranker`
+# in app/retrieval.py.
+_client = None
+
+
+def _get_client():
+    """Return a lazily-initialized, LangSmith-wrapped OpenAI client singleton.
+
+    Raises:
+        RuntimeError: If OPENAI_API_KEY is not set.
+    """
+    global _client
+    if _client is None:
+        if not OPENAI_API_KEY:
+            raise RuntimeError(
+                "OPENAI_API_KEY environment variable is not set. "
+                "Create a .env file with your API key."
+            )
+        _client = wrap_openai(OpenAI(api_key=OPENAI_API_KEY))
+    return _client
 
 
 @retry(
@@ -70,7 +94,7 @@ CARDS FOUND:
 
     logger.debug("=== PROMPT SENT TO MODEL ===\n%s\n=== END PROMPT ===", prompt)
 
-    response = _client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model=CHAT_MODEL,
         messages=[
             {"role": "system", "content": prompt},
@@ -134,6 +158,12 @@ def search_card(
     }
     candidate_pool_size = max(CANDIDATE_POOL_SIZE, SEARCH_LIMIT * 2)
 
+    # Retrieval (local embedding, structured filters, hybrid RRF, reranking)
+    # never needs OpenAI; only the generated answer does. Read the flag once so
+    # the two branches below cannot disagree within a single call.
+    answer_available = bool(OPENAI_API_KEY)
+    model_answer = None
+
     with engine.connect() as conn:
         candidates = hybrid_search_sync(
             conn,
@@ -144,7 +174,8 @@ def search_card(
             candidate_pool_size=candidate_pool_size,
         )
         results = rerank(search_query, candidates, SEARCH_LIMIT)
-        model_answer = get_model_answer(query, results)
+        if answer_available:
+            model_answer = get_model_answer(query, results)
 
     print(f"\n🏆 Top {len(results)} Results:\n")
     for i, row in enumerate(results, 1):
@@ -152,7 +183,13 @@ def search_card(
         print(f"   {row['content']}")
         print("-" * 60)
 
-    print(f"\n💡 AI Answer:\n{model_answer}\n")
+    if answer_available:
+        print(f"\n💡 AI Answer:\n{model_answer}\n")
+    else:
+        print(
+            "\n(no OPENAI_API_KEY set - retrieval only, "
+            "skipping the generated answer)\n"
+        )
 
 
 def interactive_loop() -> None:
