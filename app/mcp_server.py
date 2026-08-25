@@ -111,7 +111,7 @@ async def search_cards(
 
     Args:
         query: Natural language / descriptive part of the query.
-        limit: Number of cards to return (1-50, default 10).
+        limit: Number of cards to return (1-50, default 30).
         min_atk: Minimum ATK (inclusive).
         max_atk: Maximum ATK (inclusive).
         min_def: Minimum DEF (inclusive).

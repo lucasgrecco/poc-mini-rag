@@ -25,9 +25,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # Sem reserva de GPU aqui de propósito: `driver: nvidia` faz o `up` falhar em
-    # qualquer host sem o nvidia-container-toolkit. A reserva vive em
-    # docker-compose.nvidia.yml e entra por sobreposição — ver o Makefile.
+    # No GPU reservation here, on purpose: `driver: nvidia` makes `up` fail on any
+    # host without the nvidia-container-toolkit. The reservation lives in
+    # docker-compose.nvidia.yml and comes in as an overlay — see the Makefile.
 
 volumes:
   db_data:

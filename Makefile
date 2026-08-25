@@ -1,15 +1,15 @@
-# GPU= escolhe a sobreposição de compose. Sem GPU=, sobe em qualquer host e o torch
-# cai para CPU sozinho.
-#   make run              → CPU, qualquer máquina
-#   make run GPU=nvidia   → reserva a placa NVIDIA (exige nvidia-container-toolkit)
-#   make run GPU=rocm     → entrega as placas AMD via /dev/kfd + /dev/dri
+# GPU= picks the compose overlay. Without GPU=, it comes up on any host and torch
+# falls back to CPU on its own.
+#   make run              → CPU, any machine
+#   make run GPU=nvidia   → reserves the NVIDIA card (requires nvidia-container-toolkit)
+#   make run GPU=rocm     → hands the AMD cards over via /dev/kfd + /dev/dri
 COMPOSE := docker compose $(if $(GPU),-f docker-compose.yml -f docker-compose.$(GPU).yml)
 
-# O wheel padrão do PyPI é build CUDA e ignora a Radeon. Em GPU=rocm o torch é
-# reinstalado do índice ROCm por cima do uv sync — as dependências moram no .venv do
-# bind mount, não na imagem, então é aqui que a troca acontece e não no Dockerfile.
-# Conferir o índice correspondente à ROCm da máquina em
-# https://pytorch.org/get-started/locally/ antes da primeira subida.
+# The default PyPI wheel is a CUDA build and ignores the Radeon. Under GPU=rocm torch
+# is reinstalled from the ROCm index on top of uv sync — dependencies live in the .venv
+# of the bind mount, not in the image, so the swap happens here and not in the Dockerfile.
+# Check the index matching the machine's ROCm generation at
+# https://pytorch.org/get-started/locally/ before the first run.
 ROCM_INDEX ?= https://download.pytorch.org/whl/rocm6.3
 SYNC_EXTRA := $(if $(filter rocm,$(GPU)),$(COMPOSE) exec cli uv pip install --index-url $(ROCM_INDEX) torch,true)
 
@@ -32,8 +32,8 @@ run:
 	@echo "✓ Ready. Run: docker compose exec cli uv run python -m app.ingest"
 	@echo "            docker compose exec cli uv run python -m app.search"
 
-# Diz qual device o torch enxerga de dentro do container. Numa Radeon com ROCm o
-# esperado é `cuda True` — HIP responde pela API CUDA.
+# Reports which device torch sees from inside the container. On a Radeon with ROCm
+# the expected output is `cuda True` — HIP answers through the CUDA API.
 gpu-check:
 	$(COMPOSE) exec cli uv run python -c "import torch; print('cuda', torch.cuda.is_available(), '| devices', torch.cuda.device_count(), '| hip', torch.version.hip, '| cuda-build', torch.version.cuda)"
 

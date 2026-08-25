@@ -1,4 +1,4 @@
-# 🃏 poc-rag — Yu-Gi-Oh! Semantic Search (RAG Proof of Concept)
+# 🃏 yugioh-cards-rag — Yu-Gi-Oh! Semantic Search (RAG Proof of Concept)
 
 **Retrieval-Augmented Generation (RAG)** applied to Yu-Gi-Oh! card data.
 Ask natural language questions and get AI-powered answers grounded in real card data.
@@ -16,29 +16,29 @@ Query: "dragons with more than 2500 ATK"
 ## Architecture
 
 ```
-┌──────────────┐     ┌──────────────────────┐     ┌──────────────┐
-│  cards/*.json │────▶│  app/ingest.py       │────▶│  PostgreSQL  │
+┌───────────────┐     ┌──────────────────────┐     ┌──────────────┐
+│  jsons/*.json │────▶│  app/ingest.py       │────▶│  PostgreSQL  │
 │  (card data)  │     │  + dual embeddings   │     │  + pgvector  │
-└──────────────┘     └──────────────────────┘     └──────┬───────┘
-                         ┌─────────┐                   │
-                         │ Watcher │ (auto-reindex)    │
-                         └─────────┘                   │
-                                                        ▼
-                                          ┌───────────────────────┐
-                                          │  app/retrieval.py     │
-                                          │  filter + RRF fusion  │
-                                          │  + cross-encoder      │
-                                          └───────────┬───────────┘
-                     ┌─────────────────┐              │
-                     │  app/search.py  │◀─────────────┤
-  User query ────────▶│  + GPT-5.4-mini │              │
-                     │  (OpenAI emb.)  │              │
-                     └─────────────────┘              │
-                     ┌─────────────────┐              │
-                     │  app/mcp_server  │◀─────────────┘
-  MCP host ──────────▶│  (local emb.)   │
-  (Pi, Claude Code)   │  hybrid retrieval│
-                     └─────────────────┘
+└───────────────┘     └──────────────────────┘     └──────┬───────┘
+                      ┌─────────────┐                     │
+                      │   Watcher   │ (auto-reindex)      │
+                      └─────────────┘                     │
+                                                          ▼
+                                            ┌───────────────────────┐
+                                            │  app/retrieval.py     │
+                                            │  filter + RRF fusion  │
+                                            │  + cross-encoder      │
+                                            └───────────┬───────────┘
+                     ┌────────────────────┐             │
+  User query ───────▶│  app/search.py     │◀────────────┤
+                     │  + gpt-5.4-mini    │             │
+                     │  (OpenAI embed.)   │             │
+                     └────────────────────┘             │
+                     ┌────────────────────┐             │
+  MCP host ─────────▶│  app/mcp_server.py │◀────────────┘
+  (Pi, Claude Code)  │  (local embed.)    │
+                     │  hybrid retrieval  │
+                     └────────────────────┘
 ```
 
 | Component | Technology |
@@ -76,10 +76,10 @@ slower, never fatal. Same selection as the reranker.
 reserves no device, so it comes up on any host:
 
 ```bash
-make run              # CPU — qualquer máquina
-make run GPU=nvidia   # NVIDIA (exige nvidia-container-toolkit no host)
+make run              # CPU — any machine
+make run GPU=nvidia   # NVIDIA (requires nvidia-container-toolkit on the host)
 make run GPU=rocm     # AMD via ROCm
-make gpu-check        # o que o torch enxerga de dentro do container
+make gpu-check        # what torch sees from inside the container
 ```
 
 Keeping the NVIDIA reservation in the base file made `up` fail outright on any
@@ -302,6 +302,7 @@ make watch
 | `make demo` | Interactive onboarding → full setup → launches search |
 | `make watch` | Start file watcher for auto-reindexing |
 | `make reset` | Full teardown + recreate |
+| `make gpu-check` | Print what torch sees inside the container (device, HIP/CUDA build) |
 | `make exec CMD="..."` | Run arbitrary command in container |
 
 ---
@@ -309,7 +310,7 @@ make watch
 ## Project Structure
 
 ```
-poc-rag/
+yugioh-cards-rag/
 ├── app/
 │   ├── config.py          # Centralized config (env vars, provider auto-detect)
 │   ├── embeddings.py      # Dual embedding provider (OpenAI + local GPU/CPU)
@@ -317,14 +318,17 @@ poc-rag/
 │   ├── ingest.py          # Ingestion pipeline (batch + dual embeddings)
 │   ├── search.py          # Interactive RAG search (CLI, OpenAI)
 │   ├── mcp_server.py      # MCP server (hybrid retrieval, local embeddings)
+│   ├── query_parser.py    # ATK constraint extraction from query text (EN/PT-BR)
 │   ├── retrieval.py       # Shared retrieval core: filters, RRF fusion, reranking
 │   └── watcher.py         # File watcher for auto-reindexing
-├── cards/                 # External card data (bind-mounted, read-only)
+├── jsons/                 # Card data (one JSON file per card)
 ├── alembic/               # Database migrations
-├── docker-compose.yml     # PostgreSQL + pgvector (sem reserva de GPU)
-├── docker-compose.nvidia.yml  # Sobreposição opcional: reserva a GPU NVIDIA
-├── docker-compose.rocm.yml    # Sobreposição opcional: /dev/kfd + /dev/dri (AMD)
+├── tests/                 # DB-free unit tests (query parser, filter builder)
+├── docker-compose.yml     # PostgreSQL + pgvector (no GPU reservation)
+├── docker-compose.nvidia.yml  # Optional overlay: reserves the NVIDIA GPU
+├── docker-compose.rocm.yml    # Optional overlay: /dev/kfd + /dev/dri (AMD)
 ├── Dockerfile
+├── demo.sh                # One-command setup driven by `make demo`
 ├── .env.example           # Environment variables template
 ├── .mcp.json              # MCP server config for Claude Code / Pi
 ├── Makefile
@@ -339,6 +343,7 @@ poc-rag/
 |---|---|---|
 | `OPENAI_API_KEY` | CLI search | OpenAI API key for embeddings and chat. Not needed for MCP. |
 | `CARD_JSON_DIR` | No | Path to card JSON directory (default: `jsons`) |
+| `DATABASE_URL` | No | SQLAlchemy connection URL (default: `postgresql+psycopg2://admin:admin@db/rag_db`) |
 | `LANGSMITH_TRACING` | No | Enable LangSmith tracing (`true`/`false`) |
 | `LANGSMITH_ENDPOINT` | No | LangSmith API endpoint |
 | `LANGSMITH_API_KEY` | No | LangSmith API key |

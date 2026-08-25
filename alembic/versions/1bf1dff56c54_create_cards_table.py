@@ -1,4 +1,4 @@
-"""criacao_tabela_cards
+"""create_cards_table
 
 Revision ID: 1bf1dff56c54
 Revises: 

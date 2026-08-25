@@ -1,19 +1,19 @@
-# Sobreposição opcional: entrega as GPUs AMD ao serviço `cli` via ROCm.
+# Optional overlay: hands the AMD GPUs to the `cli` service via ROCm.
 #
-# Uso:  make run GPU=rocm
-#   ou: docker compose -f docker-compose.yml -f docker-compose.rocm.yml up -d
+# Usage:  make run GPU=rocm
+#    or:  docker compose -f docker-compose.yml -f docker-compose.rocm.yml up -d
 #
-# Não há Dockerfile próprio: os wheels ROCm do PyTorch trazem o runtime ROCm dentro
-# deles. O host precisa só do driver amdgpu no kernel — instalação de ROCm no host
-# não é pré-requisito.
+# There is no dedicated Dockerfile: the PyTorch ROCm wheels bundle the ROCm runtime
+# themselves. The host only needs the amdgpu kernel driver — a ROCm install on the
+# host is not a prerequisite.
 #
-# `device="cuda"` continua sendo o device certo: a ROCm expõe HIP pela API CUDA do
-# torch, então `torch.cuda.is_available()` responde True numa Radeon e o código da
-# aplicação não tem ramo AMD.
+# `device="cuda"` is still the right device: ROCm exposes HIP through torch's CUDA
+# API, so `torch.cuda.is_available()` returns True on a Radeon and the application
+# code carries no AMD branch.
 services:
   cli:
     devices:
-      # /dev/kfd é a interface de compute; /dev/dri expõe os nós das placas.
+      # /dev/kfd is the compute interface; /dev/dri exposes the card nodes.
       - /dev/kfd
       - /dev/dri
     group_add:
@@ -21,14 +21,14 @@ services:
       - render
     security_opt:
       - seccomp:unconfined
-    # A ROCm usa memória compartilhada entre processos para transferências.
+    # ROCm uses shared memory between processes for transfers.
     ipc: host
     environment:
-      # As duas 7900 XTX são gfx1100, suporte oficial da ROCm — nada de
-      # HSA_OVERRIDE_GFX_VERSION aqui. Esse override existe para placa fora da
-      # lista de suporte, e setá-lo sem precisar mascara erro real.
+      # Both 7900 XTX cards are gfx1100, officially supported by ROCm — no
+      # HSA_OVERRIDE_GFX_VERSION here. That override exists for cards outside the
+      # support list, and setting it when it isn't needed masks real errors.
       #
-      # sentence-transformers carrega o modelo numa placa só. Descomente para
-      # escolher qual, ou para deixar uma das duas livre:
+      # sentence-transformers loads the model onto a single card. Uncomment to
+      # pick which one, or to leave one of the two free:
       # - HIP_VISIBLE_DEVICES=0
       - PYTORCH_HIP_ALLOC_CONF=expandable_segments:True
