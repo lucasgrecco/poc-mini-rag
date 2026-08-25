@@ -61,11 +61,14 @@ setup_env() {
   fi
 
   echo ""
-  read -r -p "  OpenAI API key (required): " openai_key
+  echo "  An OpenAI API key is optional. Without one, search still runs on"
+  echo "  local embeddings and prints the ranked cards, but not the AI answer."
+  echo ""
+  read -r -p "  OpenAI API key (press Enter to skip): " openai_key
   echo ""
 
   if [[ -z "$openai_key" ]]; then
-    warn "No API key provided. Search will not work until one is added to .env"
+    warn "No API key provided. Search will run in retrieval-only mode."
   fi
 
   read -r -p "  Enable LangSmith tracing? [y/N]: " enable_ls

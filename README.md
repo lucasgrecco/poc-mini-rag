@@ -297,6 +297,16 @@ docker compose exec cli uv run python -m app.search
 make watch
 ```
 
+**The watcher treats `jsons/` as the index.** A card JSON added or edited in the
+watched directory is upserted; a card JSON that leaves it — deleted, archived,
+or moved into a subfolder — has its row removed. The observer is non-recursive,
+and watchdog reports a move out of the watched directory as a plain deletion, so
+archiving a batch of cards does drop them from the search index. That is the
+contract, not an accident: if it is not in `jsons/`, it is not searchable. Batch
+ingestion (`python -m app.ingest`) never deletes anything, so re-adding the files
+and re-ingesting restores them. Renaming a file in place is the one exception —
+it upserts the new card ID and leaves the old row alone.
+
 | Command | Action |
 |---|---|
 | `make init` | Start containers + install dependencies (minimal setup) |
