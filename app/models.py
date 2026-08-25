@@ -29,6 +29,9 @@ class Card(Base):
         properties: List of card properties (e.g. ``["Dragon", "Normal"]``).
         embedding: 1536-dimensional float vector from OpenAI embeddings.
         embedding_local: 1024-dimensional float vector from local mxbai-embed-large-v1.
+        content_hash: sha256 hex digest of ``content``, used to skip re-embedding
+            cards whose content has not changed. ``None`` for rows ingested
+            before this column existed, which are treated as stale.
     """
 
     __tablename__ = "cards"
@@ -50,3 +53,4 @@ class Card(Base):
     embedding_local: Mapped[list[float] | None] = mapped_column(
         Vector(EMBEDDING_LOCAL_DIMENSIONS)
     )
+    content_hash: Mapped[str | None] = mapped_column(String(64))
