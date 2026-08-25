@@ -146,6 +146,12 @@ start_services() {
 install_deps() {
   divider "Dependencies"
   docker compose exec -T cli uv sync
+  # uv sync reconciles the venv with uv.lock, which pins the CUDA torch, so it undoes
+  # the ROCm swap. COMPOSE_FILE is exported by `make demo GPU=rocm`; a bare
+  # `bash demo.sh` leaves it unset and stays on the base files, i.e. CPU.
+  case "${COMPOSE_FILE:-}" in
+    *rocm*) docker compose exec -T cli sh scripts/rocm-swap.sh ;;
+  esac
   success "Dependencies installed"
 }
 

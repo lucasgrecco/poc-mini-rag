@@ -20,7 +20,16 @@ services:
     command: sleep infinity
     volumes:
       - .:/app
+      # The uv cache would otherwise live in the container's writable layer and be
+      # discarded on every recreate — including every GPU-mode switch, which then
+      # re-downloads the whole CUDA stack and, under ROCm, the ROCm torch on top.
+      - uv_cache:/root/.cache/uv
     working_dir: /app
+    environment:
+      # The uv cache volume and the /app bind mount are different filesystems, so uv
+      # cannot hardlink between them. Say so up front rather than take the fallback
+      # plus a warning on every install.
+      - UV_LINK_MODE=copy
     # Optional: a fresh clone has no .env and must still come up. Without it
     # the app runs entirely on local resources -- see `make run` output.
     env_file:
@@ -35,3 +44,4 @@ services:
 
 volumes:
   db_data:
+  uv_cache:

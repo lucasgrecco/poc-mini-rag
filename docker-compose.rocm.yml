@@ -1,7 +1,12 @@
-# Optional overlay: hands the AMD GPUs to the `cli` service via ROCm.
+# Optional overlay: hands the AMD GPU to the `cli` service via ROCm.
 #
 # Usage:  make run GPU=rocm
 #    or:  docker compose -f docker-compose.yml -f docker-compose.rocm.yml up -d
+#
+# The direct docker compose invocation needs the host GID of the group that owns
+# /dev/kfd + /dev/dri/renderD128 exported first; the Makefile derives and exports
+# it automatically (see ROCM_DEV_GID there):
+#   export ROCM_DEV_GID=$(stat -c '%g' /dev/kfd)
 #
 # There is no dedicated Dockerfile: the PyTorch ROCm wheels bundle the ROCm runtime
 # themselves. The host only needs the amdgpu kernel driver — a ROCm install on the
@@ -17,18 +22,32 @@ services:
       - /dev/kfd
       - /dev/dri
     group_add:
-      - video
-      - render
+      # Numeric GIDs only: Docker resolves group names against the container image's
+      # /etc/group, not the host's, so "render"/"video" would fail (and GIDs vary
+      # per host anyway). The Makefile derives the GID that owns /dev/kfd +
+      # /dev/dri/renderD128 on this host and injects it as ROCM_DEV_GID.
+      - "${ROCM_DEV_GID:?ROCM_DEV_GID unset: /dev/kfd missing on host (amdgpu driver?)}"
     security_opt:
       - seccomp:unconfined
     # ROCm uses shared memory between processes for transfers.
     ipc: host
     environment:
-      # Both 7900 XTX cards are gfx1100, officially supported by ROCm — no
+      # The RX 7900 XTX is gfx1100, officially supported by ROCm — no
       # HSA_OVERRIDE_GFX_VERSION here. That override exists for cards outside the
       # support list, and setting it when it isn't needed masks real errors.
       #
-      # sentence-transformers loads the model onto a single card. Uncomment to
-      # pick which one, or to leave one of the two free:
+      # sentence-transformers loads the model onto a single card, so on a multi-GPU
+      # host uncomment this to pick which one:
       # - HIP_VISIBLE_DEVICES=0
-      - PYTORCH_HIP_ALLOC_CONF=expandable_segments:True
+      - PYTORCH_ALLOC_CONF=expandable_segments:True
+      # `uv run` reconciles the venv with uv.lock on every invocation, and uv.lock
+      # pins the CUDA torch — so a plain `uv run` undoes the ROCm swap. This lives
+      # here rather than as --no-sync at each call site because the container's env
+      # reaches every `docker compose exec` (README copy-paste, .mcp.json, ad-hoc
+      # shells), and because it scopes itself to GPU=rocm: the CPU and NVIDIA paths
+      # keep the self-healing `uv run`, where uv.lock's CUDA torch is already right.
+      #
+      # Mitigation, not a fix — a ROCm venv is not representable in uv.lock, so every
+      # reconciliation with the lock is a revert. It also makes `uv add` skip the
+      # install step: use `make sync` after adding a dependency.
+      - UV_NO_SYNC=1

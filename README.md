@@ -87,10 +87,15 @@ machine without the toolkit — `could not select device driver "nvidia" with
 capabilities: [[gpu]]`, raised before a single container starts. That is why it
 lives in `docker-compose.nvidia.yml`.
 
+On NVIDIA nothing is reinstalled — the `torch` that `uv.lock` pins *is* the CUDA
+build. Note it ships CUDA 13 wheels (`nvidia-*-cu13`), which need a recent driver;
+on an older one `torch.cuda.is_available()` is `False` and `app/embeddings.py` falls
+back to CPU with a single warning. `make gpu-check` is how you catch that.
+
 ### AMD (ROCm)
 
 `GPU=rocm` passes `/dev/kfd` and `/dev/dri` into the container and reinstalls torch
-from the ROCm index on top of `uv sync`. Three things make this smaller than it
+from the ROCm index on top of `uv sync`. A few things make this smaller than it
 looks:
 
 - **`device="cuda"` is correct on AMD.** ROCm exposes HIP through torch's CUDA API,
@@ -102,18 +107,39 @@ looks:
   it when it isn't needed masks real errors.
 - **No ROCm install on the host.** The PyTorch ROCm wheels bundle the ROCm runtime;
   the host needs only the `amdgpu` kernel driver.
+- **`/dev/kfd` and `/dev/dri/renderD128` must share a group on the host.** The
+  Makefile derives the container's supplementary GID from `stat -c '%g' /dev/kfd`
+  (compose can't resolve group *names* against the image's `/etc/group`). On some
+  distros the two nodes have different groups (e.g. Ubuntu: `kfd` is `root:root`);
+  point your udev rules at the same group for both, or compute will fail at open
+  time.
+- **The swap needs `UV_NO_SYNC=1` to survive.** `uv run` reconciles the venv with
+  `uv.lock` on every invocation, and `uv.lock` pins the CUDA `torch` — so a plain
+  `uv run` would undo the swap. `docker-compose.rocm.yml` sets `UV_NO_SYNC=1`, which
+  every `docker compose exec` into that container inherits, so the commands below
+  work as written. Only `GPU=rocm` gets this; the CPU and NVIDIA paths keep the
+  self-healing `uv run`. The catch: `uv add` also honors it, so it will update
+  `pyproject.toml`/`uv.lock` and install nothing — run **`make sync`** afterwards,
+  which syncs and then re-applies the swap.
 
-The wheel index is pinned in the Makefile as `ROCM_INDEX` and must match the ROCm
-generation you are on — check <https://pytorch.org/get-started/locally/> and
+The wheel index defaults to `rocm7.2` in `scripts/rocm-swap.sh`, chosen because it
+carries the same `torch` version `uv.lock` pins — the CPU, NVIDIA and ROCm paths all
+end up on one version, so `transformers` and `sentence-transformers` see what they
+were resolved against. Older generations lag several minor versions behind. Check
+<https://pytorch.org/get-started/locally/> against your kernel's `amdgpu` driver and
 override if needed:
 
 ```bash
 make run GPU=rocm ROCM_INDEX=https://download.pytorch.org/whl/rocm6.4
 ```
 
-**Two cards are one card, as written.** `sentence-transformers` loads the model onto
-a single device, so a second GPU sits idle. Pin which one with `HIP_VISIBLE_DEVICES`
-in `docker-compose.rocm.yml`. Using both would mean
+Switching GPU mode changes the compose file set, so the next `make run` **recreates**
+the `cli` container — which kills anything running inside it, such as a `make watch`
+in another terminal.
+
+**One card is all it would use.** `sentence-transformers` loads the model onto a
+single device, so a second GPU would sit idle. Pin which one with
+`HIP_VISIBLE_DEVICES` in `docker-compose.rocm.yml`. Using both would mean
 `SentenceTransformer.start_multi_process_pool()` in the ingest path — worth it only
 if batch ingestion becomes the bottleneck.
 
@@ -318,6 +344,8 @@ it upserts the new card ID and leaves the old row alone.
 | `make demo` | Interactive onboarding → full setup → launches search |
 | `make watch` | Start file watcher for auto-reindexing |
 | `make reset` | Full teardown + recreate |
+| `make test` | Run the DB-free unit tests (`make test ARGS="-k query_parser"`) |
+| `make sync` | Install dependencies after editing `pyproject.toml`, keeping the GPU torch |
 | `make gpu-check` | Print what torch sees inside the container (device, HIP/CUDA build) |
 | `make exec CMD="..."` | Run arbitrary command in container |
 
@@ -339,6 +367,7 @@ yugioh-cards-rag/
 │   └── watcher.py         # File watcher for auto-reindexing
 ├── jsons/                 # Card data (one JSON file per card)
 ├── alembic/               # Database migrations
+├── scripts/rocm-swap.sh   # Swaps CUDA torch for the ROCm build (see GPU=rocm)
 ├── tests/                 # DB-free unit tests (query parser, filter builder)
 ├── docker-compose.yml     # PostgreSQL + pgvector (no GPU reservation)
 ├── docker-compose.nvidia.yml  # Optional overlay: reserves the NVIDIA GPU
