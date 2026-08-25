@@ -103,13 +103,17 @@ class CardFileHandler(FileSystemEventHandler):
     def _handle_change(self, file_path: str) -> None:
         """Read JSON file, generate embedding, and upsert into the database."""
         path = Path(file_path)
-        if path.stat().st_size > self._max_file_size:
-            logger.warning("Skipping large file: %s", file_path)
-            return
-
         try:
+            if path.stat().st_size > self._max_file_size:
+                logger.warning("Skipping large file: %s", file_path)
+                return
+
             with open(file_path, "r", encoding="utf-8") as f:
                 card_json = json.load(f)
+        except FileNotFoundError:
+            # Normal race: the file was removed between the event and the read.
+            logger.debug("File vanished before it was read: %s", file_path)
+            return
         except (json.JSONDecodeError, OSError) as e:
             logger.error("Failed to read %s: %s", file_path, e)
             return
