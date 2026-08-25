@@ -245,11 +245,15 @@ docker compose exec cli uv run python -m app.ingest  # Ingest cards
 docker compose exec cli uv run python -m app.search  # Launch search
 ```
 
-> An OpenAI API key is optional for CLI search: without one, search runs on local
-> embeddings and prints the ranked cards, but not the generated AI answer.
-> Copy `.env.example` to `.env` and fill in the values (or let `make demo` prompt
-> you for them).
-> The MCP server works without any API key (uses local embeddings).
+> **No `.env` is needed to start.** A fresh clone runs `make run` as-is: the stack
+> comes up, migrations apply, and everything runs on local resources — local
+> embeddings on your machine, no tracing. `make run` reports which mode it came up
+> in and how to enable the optional integrations.
+>
+> Both are optional. `OPENAI_API_KEY` adds OpenAI embeddings and the generated AI
+> answer; the `LANGSMITH_*` values add tracing. To enable either, copy
+> `.env.example` to `.env` and fill in the values (or let `make demo` prompt you).
+> The MCP server never needs a key (uses local embeddings).
 
 ---
 
@@ -361,7 +365,9 @@ yugioh-cards-rag/
 | `LANGSMITH_API_KEY` | No | LangSmith API key |
 | `LANGSMITH_PROJECT` | No | LangSmith project name |
 
-Copy `.env.example` to `.env` and fill in the values. `.env` is git-ignored and never committed.
+All of these are optional — the project runs without an `.env` file at all. To set
+any of them, copy `.env.example` to `.env` and fill in the values. `.env` is
+git-ignored and never committed.
 
 **Provider auto-detection:** when `OPENAI_API_KEY` is set, the CLI uses OpenAI
 embeddings (1536 dims) and generates the AI answer with `CHAT_MODEL`. When unset,

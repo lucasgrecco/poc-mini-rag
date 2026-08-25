@@ -21,7 +21,11 @@ services:
     volumes:
       - .:/app
     working_dir: /app
-    env_file: .env
+    # Optional: a fresh clone has no .env and must still come up. Without it
+    # the app runs entirely on local resources -- see `make run` output.
+    env_file:
+      - path: .env
+        required: false
     depends_on:
       db:
         condition: service_healthy
