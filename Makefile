@@ -29,8 +29,39 @@ run:
 	$(COMPOSE) exec cli uv sync
 	$(SYNC_EXTRA)
 	$(COMPOSE) exec cli uv run alembic upgrade head
-	@echo "✓ Ready. Run: docker compose exec cli uv run python -m app.ingest"
-	@echo "            docker compose exec cli uv run python -m app.search"
+	@echo ""
+	@echo "✓ Ready."
+	@$(MAKE) --no-print-directory env-status
+	@echo ""
+	@echo "  Next: docker compose exec cli uv run python -m app.ingest"
+	@echo "        docker compose exec cli uv run python -m app.search"
+
+# Both integrations are optional and a fresh clone has neither. Reported after
+# `make run` so it is obvious which mode the stack came up in, rather than the
+# absence of keys being discovered later as missing output.
+env-status:
+	@echo ""
+	@echo "  Integrations (both optional):"
+	@if [ -f .env ] && grep -qE '^OPENAI_API_KEY=.+' .env; then \
+	  echo "    OpenAI     key found  -> OpenAI embeddings + generated answers"; \
+	else \
+	  echo "    OpenAI     no key     -> local embeddings on this machine,"; \
+	  echo "                             retrieval only, no generated answer"; \
+	fi
+	@if [ -f .env ] && grep -qE '^LANGSMITH_API_KEY=.+' .env; then \
+	  echo "    LangSmith  key found  -> tracing enabled"; \
+	else \
+	  echo "    LangSmith  no key     -> no tracing, no observability"; \
+	fi
+	@if [ ! -f .env ]; then \
+	  echo ""; \
+	  echo "  To enable either: cp .env.example .env, fill in OPENAI_API_KEY"; \
+	  echo "  and/or the LANGSMITH_* values, then run make run again."; \
+	elif ! grep -qE '^OPENAI_API_KEY=.+' .env || ! grep -qE '^LANGSMITH_API_KEY=.+' .env; then \
+	  echo ""; \
+	  echo "  To enable the rest: fill in the missing values in your existing"; \
+	  echo "  .env, then run make run again."; \
+	fi
 
 # Reports which device torch sees from inside the container. On a Radeon with ROCm
 # the expected output is `cuda True` — HIP answers through the CUDA API.
