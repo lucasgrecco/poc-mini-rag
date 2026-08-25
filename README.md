@@ -245,8 +245,10 @@ docker compose exec cli uv run python -m app.ingest  # Ingest cards
 docker compose exec cli uv run python -m app.search  # Launch search
 ```
 
-> Requires an OpenAI API key for CLI search. Copy `.env.example` to `.env` and
-> fill in the values (or let `make demo` prompt you for them).
+> An OpenAI API key is optional for CLI search: without one, search runs on local
+> embeddings and prints the ranked cards, but not the generated AI answer.
+> Copy `.env.example` to `.env` and fill in the values (or let `make demo` prompt
+> you for them).
 > The MCP server works without any API key (uses local embeddings).
 
 ---
@@ -341,7 +343,7 @@ yugioh-cards-rag/
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | CLI search | OpenAI API key for embeddings and chat. Not needed for MCP. |
+| `OPENAI_API_KEY` | No | OpenAI API key. When set, CLI search uses OpenAI embeddings and generates the AI answer. When unset, CLI search still runs on local embeddings, minus the AI answer. Never needed for MCP. |
 | `CARD_JSON_DIR` | No | Path to card JSON directory (default: `jsons`) |
 | `DATABASE_URL` | No | SQLAlchemy connection URL (default: `postgresql+psycopg2://admin:admin@db/rag_db`) |
 | `LANGSMITH_TRACING` | No | Enable LangSmith tracing (`true`/`false`) |
@@ -352,8 +354,12 @@ yugioh-cards-rag/
 Copy `.env.example` to `.env` and fill in the values. `.env` is git-ignored and never committed.
 
 **Provider auto-detection:** when `OPENAI_API_KEY` is set, the CLI uses OpenAI
-embeddings (1536 dims). When unset, it falls back to local embeddings (1024 dims).
-The MCP server always uses local embeddings regardless.
+embeddings (1536 dims) and generates the AI answer with `CHAT_MODEL`. When unset,
+the CLI falls back to local embeddings (1024 dims) and still runs the full
+retrieval pipeline — query embedding, structured ATK filters, hybrid RRF and
+cross-encoder reranking are all local — but the generated answer is not
+available: the CLI prints the ranked cards followed by a one-line notice in
+place of the AI answer. The MCP server always uses local embeddings regardless.
 
 ---
 
